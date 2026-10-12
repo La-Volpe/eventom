@@ -271,8 +271,8 @@ When asked to review this codebase (or any work in it), meet this bar:
 - Analyze judgment calls under both readings (e.g. shared view models vs native VMs:
   intent vs literal wording); the deviation ledger comes with an audit trail.
 - Review-only: change nothing. The deliverable is a dated review with ranked,
-  effort/payoff-sized recommendations; records live outside the repo
-  (orchestrator workspace). Be honest about real weaknesses — rubber stamps get rejected.
+  effort/payoff-sized recommendations; records live outside the repo. Be honest
+  about real weaknesses — rubber stamps get rejected.
 
 ## QA standards
 
@@ -285,7 +285,7 @@ A change is green only when ALL three live gates pass:
    simulator resolved by UDID (two "iPhone 17 Pro" entries exist; never trust names).
 
 UI-touching changes additionally get hands-on sweeps, recorded in a dated,
-emoji-free table outside the repo (orchestrator `qa/`) with an evidence column per row:
+emoji-free table outside the repo, with an evidence column per row:
 
 - full journey: splash → login → events → detail → sign-out;
 - saved-flag handoff through the detail route (toggle inside, back, row shows state);

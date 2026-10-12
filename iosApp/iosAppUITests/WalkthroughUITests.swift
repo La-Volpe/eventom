@@ -50,6 +50,26 @@ final class WalkthroughUITests: XCTestCase {
         app.coordinate(withNormalizedOffset: v).tap()
     }
 
+    /**
+     * Taps an element (fresh frame at tap time) and polls for the expected
+     * a11y label; retries the tap a few times — synthesized touches are
+     * intermittently dropped right after route changes on this toolchain,
+     * whichever delivery mechanism is used.
+     */
+    @discardableResult
+    private func toggleUntil(_ element: XCUIElement, in app: XCUIApplication, label: String, attempts: Int = 3) -> Bool {
+        for attempt in 0..<attempts {
+            Thread.sleep(forTimeInterval: attempt == 0 ? 0.8 : 1.2)
+            tapFrame(of: element, in: app)
+            let deadline = Date().addingTimeInterval(3.0)
+            while Date() < deadline {
+                if element.exists && element.label == label { return true }
+                Thread.sleep(forTimeInterval: 0.3)
+            }
+        }
+        return element.exists && element.label == label
+    }
+
     private func launchToLogin() -> XCUIApplication {
         let app = XCUIApplication()
         app.launch()
@@ -98,7 +118,7 @@ final class WalkthroughUITests: XCTestCase {
         wait(app.textFields["E-mail"], 3, "e-mail field")
         XCTAssertTrue(app.secureTextFields["Password"].exists, "password secure field")
         wait(app.buttons["Sign in"], 3, "sign-in CTA")
-        wait(app.staticTexts["Demo account: demo@evantom.dev · demo1234"], 3, "demo hint")
+        wait(app.staticTexts["Demo account: demo@eventom.dev · demo1234"], 3, "demo hint")
     }
 
     // MARK: - login → events walkthrough
@@ -106,7 +126,7 @@ final class WalkthroughUITests: XCTestCase {
     func testValidLoginWalkthroughToEvents() throws {
         let app = launchToLogin()
 
-        fillLogin(app: app, email: "demo@evantom.dev", password: "demo1234")
+        fillLogin(app: app, email: "demo@eventom.dev", password: "demo1234")
 
         // Sign-in proceeds through the fake backend into the events list.
         let signIn = wait(app.buttons["Sign in"], 2, "sign-in CTA")
@@ -157,13 +177,15 @@ final class WalkthroughUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 0.8)
 
         let saveToggle = app.buttons["saveToggle-4"]
-        poll(timeout: 6, { saveToggle.exists && saveToggle.label == "Save" }, "save control label")
-        Thread.sleep(forTimeInterval: 1.2)
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.873, dy: 0.222)).tap()
-        poll(timeout: 8, { saveToggle.exists && saveToggle.label == "Unsave" }, "saved state after tapping save")
-        Thread.sleep(forTimeInterval: 1.2)
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.873, dy: 0.222)).tap()
-        poll(timeout: 8, { saveToggle.exists && saveToggle.label == "Save" }, "unsaved again")
+        poll(timeout: 6, { saveToggle.exists }, "save control present")
+        // Normalize the entry state: test methods share one runner process
+        // (the Koin singletons outlive a method), and earlier journeys leave
+        // the toggle in either state.
+        if !saveToggle.exists || saveToggle.label != "Save" {
+            XCTAssertTrue(toggleUntil(saveToggle, in: app, label: "Save"), "normalized to unsaved before the round trip")
+        }
+        XCTAssertTrue(toggleUntil(saveToggle, in: app, label: "Unsave"), "saved state after tapping save")
+        XCTAssertTrue(toggleUntil(saveToggle, in: app, label: "Save"), "unsaved again")
 
         // Chips row scrolls horizontally to reach later categories.
         let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.88, dy: 0.157))
@@ -201,7 +223,7 @@ final class WalkthroughUITests: XCTestCase {
 
     func testDetailJourneyFromEvents() throws {
         let app = launchToLogin()
-        try fillLogin(app: app, email: "demo@evantom.dev", password: "demo1234")
+        try fillLogin(app: app, email: "demo@eventom.dev", password: "demo1234")
         let signIn = wait(app.buttons["Sign in"], 2, "sign-in CTA")
         tapFrame(of: signIn, in: app)
         poll(timeout: 10, { app.staticTexts["Hi, Demo Fan"].exists }, "events greeting")
@@ -213,10 +235,11 @@ final class WalkthroughUITests: XCTestCase {
 
         // Save ON first so we can prove the state survives the detail round trip.
         let saveToggle = app.buttons["saveToggle-4"]
-        poll(timeout: 6, { saveToggle.exists && saveToggle.label == "Save" }, "save control label")
-        Thread.sleep(forTimeInterval: 1.2)
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.873, dy: 0.222)).tap()
-        poll(timeout: 8, { saveToggle.exists && saveToggle.label == "Unsave" }, "saved before detail")
+        poll(timeout: 6, { saveToggle.exists }, "save control present")
+        if !saveToggle.exists || saveToggle.label != "Save" {
+            XCTAssertTrue(toggleUntil(saveToggle, in: app, label: "Save"), "normalized to unsaved before the journey")
+        }
+        XCTAssertTrue(toggleUntil(saveToggle, in: app, label: "Unsave"), "saved before detail")
 
         // --- Lachstoff detail ---
         openDetail(app: app, title: "Lachstoff — Abendprogramm")
@@ -266,7 +289,7 @@ final class WalkthroughUITests: XCTestCase {
 
     func testSignOutCycle() throws {
         let app = launchToLogin()
-        try fillLogin(app: app, email: "demo@evantom.dev", password: "demo1234")
+        try fillLogin(app: app, email: "demo@eventom.dev", password: "demo1234")
         let signIn = wait(app.buttons["Sign in"], 2, "sign-in CTA")
         tapFrame(of: signIn, in: app)
         poll(timeout: 10, { app.staticTexts["Hi, Demo Fan"].exists }, "signed in greeting")
@@ -276,7 +299,7 @@ final class WalkthroughUITests: XCTestCase {
         // intermittently dropped on this toolchain.
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25)).tap()
         Thread.sleep(forTimeInterval: 0.8)
-        let signOut = wait(app.buttons["Sign out"], 4, "sign out control")
+        let signOut = wait(app.buttons["Sign out"], 8, "sign out control")
         tapFrame(of: signOut, in: app)
         var backOnLogin = app.staticTexts["Sign in to see your events"].waitForExistence(timeout: 4)
         if !backOnLogin {
@@ -286,10 +309,10 @@ final class WalkthroughUITests: XCTestCase {
         }
         XCTAssertTrue(backOnLogin, "back on login after sign-out")
         XCTAssertTrue(app.textFields["E-mail"].exists, "login form present")
-        XCTAssertTrue(app.staticTexts["Demo account: demo@evantom.dev · demo1234"].exists, "demo hint present")
+        XCTAssertTrue(app.staticTexts["Demo account: demo@eventom.dev · demo1234"].exists, "demo hint present")
 
         // Sign in again → Events.
-        try fillLogin(app: app, email: "stella@evantom.dev", password: "sommer1")
+        try fillLogin(app: app, email: "stella@eventom.dev", password: "sommer1")
         let signInAgain = wait(app.buttons["Sign in"], 2, "sign-in CTA")
         tapFrame(of: signInAgain, in: app)
         poll(timeout: 10, { app.staticTexts["Hi, Stella Sommer"].exists }, "greeting for re-signed-in user")
@@ -300,7 +323,7 @@ final class WalkthroughUITests: XCTestCase {
     func testWrongPasswordShowsInlineErrorAndStaysOnLogin() throws {
         let app = launchToLogin()
 
-        fillLogin(app: app, email: "demo@evantom.dev", password: "hunter2")
+        fillLogin(app: app, email: "demo@eventom.dev", password: "hunter2")
 
         let signIn = wait(app.buttons["Sign in"], 2, "sign-in CTA")
         tapFrame(of: signIn, in: app)

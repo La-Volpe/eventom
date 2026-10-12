@@ -65,6 +65,7 @@ jobs:
             -configuration Debug \
             -scheme iosApp \
             -sdk iphonesimulator \
+            ARCHS=arm64 \
             -derivedDataPath ./xcode-build \
             -verbose
       - name: Upload app folder

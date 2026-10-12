@@ -13,8 +13,10 @@ belongs in `shared/`. The app modules only render shared state and forward
 user actions back into shared view models.
 
 ```
-shared/            domain (model/repository/usecase) · data (Ktor + fake backend + fixtures)
-                   presentation (StateFlow view models) · di (Koin) · platform (expect/actual)
+shared/            domain (model/repository/usecase — owns ALL boundary contracts:
+                   EventRepository + AuthRemoteDataSource + EventDetailRemoteDataSource)
+                   data (Ktor impls + fake backend + fixtures + sha digest) · presentation
+                   (StateFlow view models) · core · session · di (Koin) · platform (expect/actual)
 androidApp/        Compose UI only (plain Android app)
 iosApp/            SwiftUI only + Xcode project consuming Shared.framework
 ```
@@ -34,6 +36,8 @@ reword one platform.
 ./gradlew build                                   # everything + all shared tests
 ./gradlew :shared:testAndroidHostTest             # common tests on JVM
 ./gradlew :shared:testIosSimulatorArm64Test       # common tests on iOS simulator  (task: :shared:iosSimulatorArm64Test)
+./gradlew :androidApp:connectedDebugAndroidTest   # Android done-gate: connected walkthrough (emulator required)
+./gradlew :shared:koverXmlReport :shared:koverHtmlReport   # coverage: HTML in shared/build/reports/kover/html/
 ./gradlew :androidApp:installDebug                # run Android app
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build   # build iOS app
@@ -76,8 +80,12 @@ debug shared-code crashes on iOS.
 | Ktor | 3.6.0 (OkHttp / Darwin engines via expect/actual; `ktor-client-mock` on the same pin — the fake backend) |
 | compile/target SDK | 37; minSdk 26; iOS min 16.0 |
 | Xcode | 27 — Simulators are driven via `simctl`/`idb`; there is no standalone Simulator.app in Xcode 27 (DeviceHub hosts the device UI) |
+| Navigation | `androidx-navigation-compose` 2.9.8 (iOS side uses framework-native `NavigationStack`, no dependency) |
+| Coverage | Kover `0.9.11` (plugin on `:shared`; the 0.9 line is the one compatible with AGP 9's KMP library plugin) |
 
-All pinned in `gradle/libs.versions.toml`.
+All pinned in `gradle/libs.versions.toml`. Note: the `iosX64()` Apple target is
+**commented out** in `shared/build.gradle.kts` (arm64-only machines build faster);
+uncomment it there if an Intel Mac must build the project.
 
 ## Gotchas already paid for — do not regress
 
@@ -129,8 +137,8 @@ All pinned in `gradle/libs.versions.toml`.
 
 8. **Cancellation hygiene**: any `catch (e: Exception)` that guards a suspend
    call must rethrow `CancellationException` first (see
-   `EventRepositoryImpl.refresh`). Otherwise cancelled loads get treated as
-   offline-fallbacks and the sample data overwrites real data.
+   `EventRepositoryImpl.refresh`). Otherwise cancelled loads get misread as
+   failures (the failure path keeps prior state — see #19).
 
 9. **JVM unit tests have no `Dispatchers.Main`.** Test files construct
    `CoroutineScope(Dispatchers.Default)`, never Main. Anything hard-wiring Main
@@ -218,7 +226,9 @@ All pinned in `gradle/libs.versions.toml`.
 
 - One Gradle version pin per dependency, all in `gradle/libs.versions.toml`.
 - Shared code is pure Kotlin: no Android/framework classes in `commonMain` —
-  platform needs go through `expect/actual` (`data/http`, `platform/`).
+  platform needs go through `expect/actual` (`data/http`, `data/sha`,
+  `platform/`); `core/` is the neutral home for cross-cutting handle types
+  (`UiObservation`) so session doesn't reach into presentation.
 - Swift reaches the Koin graph only via typed accessors on `SharedKoin`
   (`SharedKoin.shared.eventsViewModel()`), never via `Koin.get(objCClass:)`.
 - Kotlin objects in Swift are `Foo.shared`; top-level functions live behind
@@ -231,28 +241,42 @@ All pinned in `gradle/libs.versions.toml`.
 - The app icon placeholder is a plain vector (`@drawable/ic_launcher`); no
   app-icon asset catalog yet (posters live in `Posters.xcassets`, icons don't).
 - `imageRef` flows fixtures → `EventDto` → `Event` → poster resource, resolved
-  per platform by the PosterMap helpers. Every shared UI string is asserted
-  by the XCUITest walkthrough; changing wording means updating fixtures and
-  the test in one commit.
+  per platform by the PosterMap helpers (hero 1200×1500 for detail, thumb
+  480×600 for lists — see #17). Every shared UI string is asserted by BOTH
+  walkthrough suites — Android connected `WalkthroughTest.kt` and iOS
+  `WalkthroughUITests.swift` (which also proves route shape) — so changing
+  wording means updating fixtures and both tests in one commit.
+- Test ledger at HEAD: 67 shared tests (34 JVM host + 33 iOS-sim),
+  1 connected Android walkthrough, 6 iOS XCUITests — all green per phase.
 - The repo is git (history starts at the first feature-complete commit); no
   remote is configured.
 
 ## When adding a feature, the expected diff shape
 
-1. Model/contract in `shared/.../domain` (pure Kotlin).
-2. Data plumbing in `shared/.../data` + register in `shared/.../di/AppModules.kt`
-   (type the `single<>`s explicitly). If the fake backend serves new data,
-   update the fixtures under `shared/src/commonMain/resources/api/` and the
-   compiled-in mirror (`FakeApiPayloads`) — the parity test guards drift.
+1. Model/contract in `shared/.../domain` (pure Kotlin; ALL boundary interfaces
+   live here — data classes implement them, domain never imports `data.*`).
+2. Data plumbing in `shared/.../data` (Ktor impls of the domain interfaces) +
+   register in `shared/.../di/AppModules.kt` (type the `single<>`s
+   explicitly). If the fake backend serves new data, update the fixtures
+   under `shared/src/commonMain/resources/api/` and the compiled-in mirror
+   (`FakeApiPayloads`) — the parity test guards drift. Fixtures are the ONLY
+   demo content (no `data.local` fallback lists — see #19).
 3. State + view model in `shared/.../presentation` (data-class state + a
    concrete `observe(onChange:)`; Swift needs it for every observable).
 4. Render it twice: Compose in `androidApp/.../EventsScreen.kt` style,
-   SwiftUI in `iosApp/iosApp/EventsView.swift` style.
+   SwiftUI in `iosApp/iosApp/EventsView.swift` style — and wire navigation:
+   add a typed `NavHost` destination (Android `MainActivity`) and a
+   `navigationDestination` value route (iOS `RootView` `NavigationStack`),
+   plus a bottom-bar entry if it's a tab (#21).
 5. Unit tests in `shared/src/commonTest` — the UIs are thin; logic must be
    testable in common code.
-6. Extend `WalkthroughUITests.swift` when a flow changes, and regenerate
-   posters via the script if artwork changes.
-7. Done-gates: `./gradlew build` (all suites) AND `xcodebuild test`
+6. Extend BOTH walkthrough suites when a flow changes: Android
+   `WalkthroughTest.kt` (connected) and iOS `WalkthroughUITests.swift`; alter
+   fixtures/artwork only via the tools (poster regen draws hero+thumb in one
+   run and parses `CategorySpec.kt` — adding a CATEGORY touches the enum +
+   fixtures + that one spec file, then regenerates).
+7. Done-gates: `./gradlew build` (all suites) AND
+   `:androidApp:connectedDebugAndroidTest` AND `xcodebuild test`
    (walkthrough green). For OCR-level runtime checks without a GUI, the
    established tools: `idb ui describe-all` (accessibility frames) and
    macOS Vision OCR on `simctl` screenshots.

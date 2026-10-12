@@ -252,8 +252,9 @@ uncomment it there if an Intel Mac must build the project.
   wording means updating fixtures and both tests in one commit.
 - Test ledger at HEAD: 67 shared tests (34 JVM host + 33 iOS-sim),
   1 connected Android walkthrough, 6 iOS XCUITests — all green per phase.
-- The repo is git (history starts at the first feature-complete commit); no
-  remote is configured.
+- The repo is git; it is published at github.com/La-Volpe/eventom (origin added
+  after the improvement plan; history starts at the first feature-complete
+  commit).
 
 ## Code review standards
 

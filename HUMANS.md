@@ -61,7 +61,7 @@ anything above it.
 **4. Two poster sizes, on purpose.**
 Same artwork in two files: hero 1200×1500 for the detail screen, thumb 480×600
 for list cards (`THUMB_SIZE`, `generate_posters.py:35`). Lists render the thumb
-(`EventsScreen.kt:161`, `posterThumbResFor(...)`). A full-res decode costs about
+(`EventsScreen.kt:161-162`, `posterThumbResFor(...)`). A full-res decode costs about
 29 MB per screen position; the thumb costs about 1.2 MB. The generator emits
 both and verifies each.
 

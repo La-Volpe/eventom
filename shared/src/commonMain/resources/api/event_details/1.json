@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "longDescription": "Aurora Nights kommen mit ihrer Sommer Tour 2027 zurück nach Berlin. Zwischen Lichtinstallationen und Open-Air-Sommerabenteuer spielt die Band die komplette neue Platte 'Lichterfest' samt allen Radiohits. Der Sound: treibende Synths, nordische Melancholie und ein Publikum, das bis in die Nacht bleibt.",
+  "lineup": [
+    "Aurora Nights",
+    "Support: Nordlicht Kollektiv",
+    "Support: Fjord & Feuer"
+  ],
+  "doorsTime": "18:00",
+  "ticketCategories": [
+    { "name": "Kategorie 1 — Best Seats", "price": 119.90 },
+    { "name": "Kategorie 2 — Parkett", "price": 89.90 },
+    { "name": "Kategorie 3 — Stehplatz", "price": 59.90 }
+  ],
+  "ageInfo": "Fsk ab 6 Jahren"
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple round vector used as the launcher icon in this boilerplate. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#6750A4"
+        android:pathData="M54,54m-40,0a40,40 0 1,1 80,0a40,40 0 1,1 -80,0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,38h16v10h8v6h-8v16h-16z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M62,38h12v32h-12z" />
+</vector>

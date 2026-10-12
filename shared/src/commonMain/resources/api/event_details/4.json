@@ -1,0 +1,15 @@
+{
+  "id": 4,
+  "longDescription": "Lachstoff ist Hamburgs Antwort auf den grauen Alltag: zwei Stunden Stand-up, Improvisation und eine offene Bühne, auf der auch unbekannte Namen ihre fünf Minuten bekommen. Das Programm wechselt jeden Abend — mitkommen lohnt sich zweimal.",
+  "lineup": [
+    "Host: Miriam Kaltbach",
+    "Headliner: Jonas Zwiebelt",
+    "Open Mic"
+  ],
+  "doorsTime": "17:15",
+  "ticketCategories": [
+    { "name": "Kategorie 1 — Tisch nahe der Bühne", "price": 54.90 },
+    { "name": "Kategorie 2 — Freie Platzwahl", "price": 39.90 }
+  ],
+  "ageInfo": "Fsk ab 18 Jahren"
+}

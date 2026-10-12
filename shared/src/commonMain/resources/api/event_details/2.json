@@ -1,0 +1,15 @@
+{
+  "id": 2,
+  "longDescription": "Ein Maskenball, ein verschwundenes Testament und eine Stimme, die über drei Galas hinausreicht: 'Das Geheimnis der Masken' verbindet klassische Musicaldramaturgie mit moderner Bühnentechnik. 24 Sänger:innen, ein komplettes Orchester und Masken, die auf der Bühne ihre Besitzer wechseln.",
+  "lineup": [
+    "Original Cast Hamburg",
+    "Orchester der Operettenpalast"
+  ],
+  "doorsTime": "17:30",
+  "ticketCategories": [
+    { "name": "Premium-Paket inkl. Prosecco", "price": 149.00 },
+    { "name": "Kategorie 1 — Loge", "price": 109.50 },
+    { "name": "Kategorie 2 — Rang", "price": 79.50 }
+  ],
+  "ageInfo": "Fsk ab 12 Jahren"
+}

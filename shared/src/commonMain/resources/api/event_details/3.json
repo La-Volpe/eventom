@@ -1,0 +1,14 @@
+{
+  "id": 3,
+  "longDescription": "Wenn die Alster Adler auf die Rhein Löwen treffen, zählt jede Sekunde: Das Halbfinale der Stadtliga entscheidet, wer im März um die Meisterschaft spielt. Eishockey in Hamburg heißt Vollkontakt, Vollgesang und Stehplatz-Atmosphäre auf ganzer Linie.",
+  "lineup": [
+    "Alster Adler Hamburg",
+    "Rhein Löwen Köln"
+  ],
+  "doorsTime": "14:00",
+  "ticketCategories": [
+    { "name": "Kategorie 1 — Sitzplatz Tribüne", "price": 44.90 },
+    { "name": "Kategorie 2 — Stehplatz", "price": 24.90 }
+  ],
+  "ageInfo": "Keine Altersbeschränkung"
+}

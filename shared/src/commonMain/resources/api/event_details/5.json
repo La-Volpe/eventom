@@ -1,0 +1,14 @@
+{
+  "id": 5,
+  "longDescription": "Zwei Schauspieler:innen, ein Bühnenbild, 90 Minuten: 'Hamlet reloaded' verdichtet Shakespeares Klassiker zur Doppel-Solo-Inszenierung, in der jede:n Darsteller:in alle Rollen spielt. Regie: Ines Falkenrath. Sein oder nicht — hier wird beides gespielt.",
+  "lineup": [
+    "Inszenierung: Ines Falkenrath",
+    "Darstellung: Timo Brandt & Ada Silberstein"
+  ],
+  "doorsTime": "18:15",
+  "ticketCategories": [
+    { "name": "Kategorie 1 — Reihe 1–5", "price": 54.00 },
+    { "name": "Kategorie 2 — Parkett", "price": 34.00 }
+  ],
+  "ageInfo": "Fsk ab 14 Jahren"
+}

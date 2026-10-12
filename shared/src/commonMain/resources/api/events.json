@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "imageRef": "poster_event_1",
+    "title": "Aurora Nights — Sommer Tour 2027",
+    "category": "concerts",
+    "dateTime": "2027-06-12T19:30:00Z",
+    "city": "Berlin",
+    "venue": "Halle am Ufer",
+    "priceFrom": 59.90,
+    "shortPitch": "Indie-Pop unter freiem Himmel — die Tour des Sommers."
+  },
+  {
+    "id": 2,
+    "imageRef": "poster_event_2",
+    "title": "Das Geheimnis der Masken",
+    "category": "musical-show",
+    "dateTime": "2027-03-19T20:00:00Z",
+    "city": "Hamburg",
+    "venue": "Operettenpalast",
+    "priceFrom": 79.50,
+    "shortPitch": "Große Gefühle, große Stimmen: das Mysteriösmusical der Saison."
+  },
+  {
+    "id": 3,
+    "imageRef": "poster_event_3",
+    "title": "Stadtderby: Alster Adler gegen Rhein Löwen",
+    "category": "sports",
+    "dateTime": "2027-02-05T15:30:00Z",
+    "city": "Hamburg",
+    "venue": "Eishalle Alsterdamm",
+    "priceFrom": 24.90,
+    "shortPitch": "Das Eishockey-Halbfinale der Stadtliga — Stehplatz-Atmosphäre garantiert."
+  },
+  {
+    "id": 4,
+    "imageRef": "poster_event_4",
+    "title": "Lachstoff — Abendprogramm",
+    "category": "comedy",
+    "dateTime": "2027-01-23T18:00:00Z",
+    "city": "München",
+    "venue": "Lusthaus am Ring",
+    "priceFrom": 39.90,
+    "shortPitch": "Zwei Stunden Stand-up, Improvisation und eine offene Bühne."
+  },
+  {
+    "id": 5,
+    "imageRef": "poster_event_5",
+    "title": "Hamlet reloaded",
+    "category": "theater",
+    "dateTime": "2027-04-08T19:00:00Z",
+    "city": "Köln",
+    "venue": "Schauspielhaus Altstadt",
+    "priceFrom": 34.00,
+    "shortPitch": "Shakespeares Klassiker in einer rasenden Doppel-Solo-Inszenierung."
+  },
+  {
+    "id": 6,
+    "imageRef": "poster_event_6",
+    "title": "Frühlingsfest am Stadtpark",
+    "category": "leisure",
+    "dateTime": "2027-04-24T11:00:00Z",
+    "city": "Leipzig",
+    "venue": "Festwiese Nord",
+    "priceFrom": 8.50,
+    "shortPitch": "Fahrgeschäfte, Handwerkermarkt und Familienbühne am ersten Maiwochenende."
+  }
+]

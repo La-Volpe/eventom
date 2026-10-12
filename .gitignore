@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Android
+local.properties
+*.apk
+*.aab
+captures/
+
+# iOS / Xcode
+.DS_Store
+xcuserdata/
+*.xcuserstate
+DerivedData/
+shared/build/xcode-frameworks/
+
+# IDEs
+.idea/
+*.iml
+.kotlin/
+
+# Misc
+*.log

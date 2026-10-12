@@ -1,0 +1,14 @@
+{
+  "id": 6,
+  "longDescription": "Am ersten Maiwochenende verwandelt sich die Festwiese Nord in einen Frühlingsmarkt: über 40 Handwerker:innen, drei Bühnen für Familienprogramm und Fahrgeschäfte, die seit drei Generationen dazugehören. Der Eintritt kostet einmalig 8,50 € — alle Bühnen inklusive.",
+  "lineup": [
+    "Familienbühne Nord",
+    "Volksmusikensemble Stadtpark",
+    "Zirkus Kleine Wolke"
+  ],
+  "doorsTime": "10:30",
+  "ticketCategories": [
+    { "name": "Eintritt Tageskasse", "price": 8.50 }
+  ],
+  "ageInfo": "Keine Altersbeschränkung"
+}

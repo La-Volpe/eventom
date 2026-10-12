@@ -222,6 +222,16 @@ uncomment it there if an Intel Mac must build the project.
     restore"; the real landing spot is this entry (#21) because ##19/#20
     were already taken.
 
+22. **CI workflow pushes and the simulator destination on GitHub Actions.**
+    Two things this pipeline paid for: (1) pushing a change that touches
+    `.github/workflows/*` requires an OAuth token with the `workflow` scope —
+    `gh auth refresh -h github.com -s workflow` (device flow) adds it; plain
+    `repo` scope gets the push rejected. (2) `xcodebuild -sdk iphonesimulator`
+    with the GENERIC destination leaves `ARCHS` unset, and the KMP Gradle
+    bridge fails with "Xcode Requested Architecture Not Configured in
+    Gradle" — pin `ARCHS=arm64` on the xcodebuild step (also fine: a concrete
+    `-destination`, but runner simulator names drift; the ARCHS pin doesn't).
+
 ## Conventions
 
 - **Naming:** technical identifiers use `eventom` (all-lowercase; packages,

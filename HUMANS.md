@@ -86,8 +86,9 @@ relaunching.
 - No persistence: the session and saved events live in memory and die with the
   process.
 - German only, and the content is offline only (no remote images).
-- No CI: the quality gates are local — 67 shared tests plus two walkthrough
-  suites.
+- CI is basic: GitHub Actions runs the shared tests and builds the artifacts
+  (APK + iOS simulator app) on every push; the interactive walkthrough suites
+  stay local — they need devices.
 
 ## More
 

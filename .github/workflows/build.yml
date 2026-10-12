@@ -142,12 +142,12 @@ jobs:
           PY
       - name: Commit badge when changed
         run: |
-          if git diff --quiet -- .github/badges/tests.json; then
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/badges/tests.json
+          if git diff --cached --quiet -- .github/badges/tests.json; then
             echo "no badge change"
           else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .github/badges/tests.json
             git commit -m "CI: update tests badge (auto)"
             git push origin main
           fi

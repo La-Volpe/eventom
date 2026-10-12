@@ -11,11 +11,8 @@ architecture and the test discipline around it.
 
 | Android | iOS |
 |---|---|
-| ![Login on Android](.github/assets/android-login.png) | ![Events on iOS](.github/assets/ios-events.png) |
-
-| | |
-|---|---|
-| ![Events on Android](.github/assets/android-events.png) | ![Detail on iOS](.github/assets/ios-detail.png) |
+| ![Events on Android](.github/assets/android-events.png) | ![Events on iOS](.github/assets/ios-events.png) |
+| ![Flow on Android: sign-in → list → detail](https://github.com/user-attachments/assets/2685d76e-c205-45f2-8e76-0976074098c2) | ![Flow on iOS: sign-in → list → detail](https://github.com/user-attachments/assets/e1c6e1f4-1be3-46b3-90f3-d05fb4aeea6c) |
 
 ```text
 ┌────────────────────────────────────────────┐

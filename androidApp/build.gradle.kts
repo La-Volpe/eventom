@@ -32,6 +32,8 @@ dependencies {
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
+    // T18 (D4): typed nav routes; version aligned with the compose BOM era.
+    implementation(libs.androidx.navigation.compose)
 
     // Compose (versions come from the BoM)
     implementation(platform(libs.compose.bom))

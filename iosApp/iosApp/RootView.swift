@@ -2,21 +2,18 @@ import SwiftUI
 import Shared
 
 /**
- * Root of the iOS app: splash → (Login | Events), no navigation library.
- * Routing keys off the shared SessionStore (in memory → cold start = splash
- * → Login). Sign-out returns to Login; the detail screen presents as a
- * full-screen cover over the (preserved) tab view.
+ * Root of the iOS app (T18, D4): the session-state switch (splash → login |
+ * tabs) and a `NavigationStack` for the detail push. The Route enum for
+ * detail navigation is retired — the push happens through a value-based
+ * `navigationDestination(for: Int64.self)` carrying the event id, over the
+ * PRESERVED TabView (chips/list stay alive underneath; detail covers the
+ * tab bar on push — matching the pre-Phase-4 full-screen feel).
  */
 struct RootView: View {
-    /// Detail navigation model (IOS-3): `Identifiable` for fullScreenCover.
-    private struct DetailRoute: Identifiable {
-        let id: Int64
-    }
-
     private enum Route { case splash, login, events }
 
     @State private var route: Route = .splash
-    @State private var detailRoute: DetailRoute? = nil
+    @State private var detailPath: [Int64] = []
 
     var body: some View {
         switch route {
@@ -36,25 +33,31 @@ struct RootView: View {
                 },
             )
         case .events:
-            TabView {
-                EventsView(
-                    onSignIn: { route = .login },
-                    onSignOut: {
-                        SharedKoin.shared.authViewModel().reset()
-                        route = .login
-                    },
-                    onOpenDetail: { detailRoute = DetailRoute(id: $0) },
-                )
-                    .tabItem { Label("Events", systemImage: "calendar") }
-                AboutView()
-                    .tabItem { Label("About", systemImage: "info.circle") }
-            }
-            .fullScreenCover(item: $detailRoute) { route in
-                EventDetailView(eventId: route.id) {
-                    // Back: reset once (before the cover closes) so a re-entry
-                    // starts fresh — same contract as the login screen.
-                    SharedKoin.shared.eventDetailViewModel().reset()
-                    detailRoute = nil
+            NavigationStack(path: $detailPath) {
+                TabView {
+                    EventsView(
+                        onSignIn: { route = .login },
+                        onSignOut: {
+                            SharedKoin.shared.sessionStore().signOut()
+                            SharedKoin.shared.authViewModel().reset()
+                            route = .login
+                        },
+                        onOpenDetail: { detailPath.append($0) },
+                    )
+                        .tabItem { Label("Events", systemImage: "calendar") }
+                    AboutView()
+                        .tabItem { Label("About", systemImage: "info.circle") }
+                }
+                .navigationDestination(for: Int64.self) { eventId in
+                    EventDetailView(eventId: eventId) {
+                        // Back: reset once (before the pop) so a re-entry
+                        // starts fresh — the single-owner contract held since
+                        // the login screen.
+                        SharedKoin.shared.eventDetailViewModel().reset()
+                        if !detailPath.isEmpty {
+                            detailPath.removeLast()
+                        }
+                    }
                 }
             }
         }

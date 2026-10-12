@@ -2,7 +2,6 @@ package com.evantom.android
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.material3.NavigationBar
@@ -12,12 +11,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.foundation.layout.padding
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.evantom.di.SharedKoin
 import com.evantom.presentation.AuthUiState
 import com.evantom.presentation.EventDetailUiState
@@ -35,117 +39,153 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Root composition: Splash → (Login | Events) decided by the shared
- * SessionStore (in-memory, so a cold start always goes to Login). No
- * navigation library — plain state. View models come from the shared Koin
- * graph started in [com.evantom.android.EvenTomApplication].
+ * Root composition: Compose Navigation (plan T18, D4) with typed routes:
+ * `splash` → `login` | (`events` + `about` tabs) → `detail/{eventId}`.
+ * The bottom bar remains and switches tab destinations nav-driven.
+ *
+ * State hoisting per destination: screens keep taking state + callbacks;
+ * the shared view models stay Koin singletons resolved once per destination
+ * (`SharedKoin` as before — no new VM layer). Session routing (login vs
+ * events) is nav-driven: back-stack + popUpTo, replacing the route enum.
  */
 @Composable
 fun EvenTomApp() {
-    var screen by rememberSaveable { mutableStateOf(Screen.SPLASH) }
-    var detailEventId by rememberSaveable { mutableLongStateOf(-1L) }
+    val navigationController = rememberNavController()
     val eventsViewModel = remember { SharedKoin.eventsViewModel() }
     val authViewModel = remember { SharedKoin.authViewModel() }
     val detailViewModel = remember { SharedKoin.eventDetailViewModel() }
     val session = remember { SharedKoin.sessionStore() }
     val eventsState = eventsViewModel.state.collectAsStateWithLifecycle().value
-    val authState = authViewModel.state.collectAsStateWithLifecycle().value
-    val detailState = detailViewModel.state.collectAsStateWithLifecycle().value
-    val currentUser = session.currentUser.collectAsStateWithLifecycle().value
-
-    // Successful sign-in: park the login state and go to Events.
-    LaunchedEffect(authState) {
-        if (authState is AuthUiState.Success) {
-            authViewModel.reset()
-            screen = Screen.EVENTS
-        }
-    }
 
     Scaffold(
         bottomBar = {
-            // The splash and the login sheet stand alone — no bottom bar.
-            if (screen == Screen.EVENTS || screen == Screen.ABOUT) {
-                NavigationBar {
-                    NavigationBarItem(
-                        selected = screen == Screen.EVENTS,
-                        onClick = { screen = Screen.EVENTS },
-                        label = { Text("Events") },
-                        icon = {},
-                    )
-                    NavigationBarItem(
-                        selected = screen == Screen.ABOUT,
-                        onClick = { screen = Screen.ABOUT },
-                        label = { Text("About") },
-                        icon = {},
-                    )
-                }
-            }
+            RouteBottomBar(
+                navigationController = navigationController,
+                visible = currentRouteIs(navigationController, "events", "about"),
+            )
         },
     ) { innerPadding ->
-        // `shared` knows nothing about safe areas; the app maps Scaffold's
-        // padding into the content before rendering shared state.
-        when (screen) {
-            Screen.SPLASH -> SplashScreen(
-                onSplashFinished = { screen = if (session.isSignedIn) Screen.EVENTS else Screen.LOGIN },
-            )
-            Screen.EVENTS -> EventsScreen(
-                viewState = eventsState,
-                onSelect = { eventsViewModel.select(it) },
-                onToggleSaved = { eventsViewModel.toggleSaved(it) },
-                onRefresh = { eventsViewModel.refresh() },
-                onOpenDetail = { id ->
-                    detailEventId = id
-                    detailViewModel.load(id)
-                    screen = Screen.DETAIL
-                },
-                headerUser = currentUser?.name,
-                onSignIn = { screen = Screen.LOGIN },
-                onSignOut = {
-                    session.signOut()
-                    screen = Screen.LOGIN
-                },
-                contentPadding = innerPadding,
-            )
-            Screen.DETAIL -> {
-                // Safety net for a process restore straight onto the detail
-                // screen: if the view model has no attempt running, reload.
-                LaunchedEffect(detailState) {
-                    if (detailState is EventDetailUiState.Idle) {
-                        detailViewModel.load(detailEventId)
-                    }
-                }
-                BackHandler {
-                    detailViewModel.reset()
-                    screen = Screen.EVENTS
-                }
-                EventDetailScreen(
-                    state = detailState,
-                    onBack = {
-                        detailViewModel.reset()
-                        screen = Screen.EVENTS
+        // Bottom-only: the detail destination keeps its full-bleed hero (no
+        // top inset), while list/login content stays clear of the bottom bar.
+        NavHost(
+            navController = navigationController,
+            startDestination = "splash",
+            modifier = androidx.compose.ui.Modifier.padding(
+                bottom = innerPadding.calculateBottomPadding(),
+            ),
+        ) {
+            composable("splash") {
+                SplashScreen(
+                    onSplashFinished = {
+                        val target = if (session.isSignedIn) "events" else "login"
+                        navigationController.navigate(target) { popUpTo("splash") { inclusive = true } }
                     },
-                    onRetry = { detailViewModel.load(detailEventId) },
                 )
             }
-            Screen.ABOUT -> AboutScreen(contentPadding = innerPadding)
-            Screen.LOGIN -> {
-                // System back behaves like the Back button while logging in.
-                BackHandler(enabled = authState !is AuthUiState.Loading) {
-                    authViewModel.reset()
-                    screen = Screen.EVENTS
+            composable("login") {
+                val authState = authViewModel.state.collectAsStateWithLifecycle().value
+                LaunchedEffect(authState) {
+                    if (authState is AuthUiState.Success) {
+                        authViewModel.reset()
+                        navigationController.navigate("events") {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
                 }
                 LoginScreen(
                     authState = authState,
                     onSignIn = { email, password -> authViewModel.signIn(email, password) },
                     onBack = {
                         authViewModel.reset()
-                        screen = Screen.EVENTS
+                        navigationController.navigate("events") {
+                            popUpTo("login") { inclusive = true }
+                        }
                     },
-                    contentPadding = innerPadding,
+                )
+            }
+            composable("events") {
+                EventsScreen(
+                    viewState = eventsState,
+                    onSelect = { eventsViewModel.select(it) },
+                    onToggleSaved = { eventsViewModel.toggleSaved(it) },
+                    onRefresh = { eventsViewModel.refresh() },
+                    onOpenDetail = { id -> navigationController.navigate("detail/$id") },
+                    headerUser = session.currentUser.collectAsStateWithLifecycle().value?.name,
+                    onSignIn = { navigationController.navigate("login") },
+                    onSignOut = {
+                        session.signOut()
+                        authViewModel.reset()
+                        navigationController.navigate("login") { popUpTo(0) { inclusive = true } }
+                    },
+                )
+            }
+            composable("about") {
+                AboutScreen()
+            }
+            composable(
+                route = "detail/{eventId}",
+                arguments = listOf(navArgument("eventId") { type = NavType.LongType }),
+            ) { entry ->
+                val eventId = entry.arguments?.getLong("eventId") ?: -1L
+                val detailState = detailViewModel.state.collectAsStateWithLifecycle().value
+                // SAFETY NET (kept, verified): the nav framework restores the
+                // ROUTE after process death (back-stack bundle survives
+                // am-kill after a stop), but the detail payload is NOT
+                // restored — the destination must re-request it once. Without
+                // this, a restored detail destination sticks on the loading
+                // state forever (verified by kill+relaunch with the net
+                // disabled, Phase 4 evidence).
+                LaunchedEffect(eventId) {
+                    if (detailState is EventDetailUiState.Idle) {
+                        detailViewModel.load(eventId)
+                    }
+                }
+                EventDetailScreen(
+                    state = detailState,
+                    onBack = {
+                        detailViewModel.reset()
+                        navigationController.popBackStack()
+                    },
+                    onRetry = { detailViewModel.load(eventId) },
                 )
             }
         }
     }
 }
 
-private enum class Screen { SPLASH, EVENTS, LOGIN, ABOUT, DETAIL }
+@Composable
+private fun currentRouteIs(controller: NavHostController, vararg routes: String): Boolean {
+    val current = controller.currentBackStackEntryAsState().value?.destination?.route
+    return routes.any { current == it }
+}
+
+@Composable
+private fun RouteBottomBar(navigationController: NavHostController, visible: Boolean) {
+    if (!visible) return
+    NavigationBar {
+        NavigationBarItem(
+            selected = currentRouteIs(navigationController, "events"),
+            onClick = {
+                navigationController.navigate("events") {
+                    popUpTo(navigationController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            label = { Text("Events") },
+            icon = {},
+        )
+        NavigationBarItem(
+            selected = currentRouteIs(navigationController, "about"),
+            onClick = {
+                navigationController.navigate("about") {
+                    popUpTo(navigationController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            label = { Text("About") },
+            icon = {},
+        )
+    }
+}

@@ -198,6 +198,21 @@ All pinned in `gradle/libs.versions.toml`.
     Excluded from counting: `com.evantom.di` (Koin wiring),
     `com.evantom.data.fake` (offline demo backend — exercised end-to-end by
     walkthroughs) and `com.evantom.platform` (expect/actual plumbing).
+21. **Navigation is framework-owned on both platforms (plan T18/D4).**
+    Android: Compose `NavHost` with typed routes (`splash`, `login`,
+    `events`, `about`, `detail/{eventId}`; `navigation-compose 2.9.8`),
+    bottom-bar tabs navigate with save/restore state. iOS: a session-state
+    switch (splash/login/tabs) wraps a `NavigationStack`; the detail push
+    is value-based (`navigationDestination(for: Int64.self)`), replacing
+    the retired `Route` enum + `fullScreenCover` — pushed detail hides the
+    tab bar (same UX as before). **Restore semantics:** the nav frameworks
+    restore ROUTES across process death (verified by kill-after-stop +
+    relaunch), but fetched CONTENT is not restorable — the detail
+    destination keeps the `Idle → load` re-fetch safety net (without it a
+    restored detail destination stuck on the loading state, verified).
+    Doc-note drift: the plan's Phase-4 text referenced "#19 navigation +
+    restore"; the real landing spot is this entry (#21) because ##19/#20
+    were already taken.
 
 ## Conventions
 

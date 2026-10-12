@@ -79,7 +79,9 @@ class EventsViewModel(
             val outcome = refreshEvents()
             updateState { current ->
                 val failure = outcome.exceptionOrNull()
-                current.copy(isRefreshing = false, message = failure?.let { "Offline — showing sample events" })
+                // D1: no sample fallback — the previously loaded list stays on
+                // screen, so the banner must not claim "sample events".
+                current.copy(isRefreshing = false, message = failure?.let { "Offline — showing your last loaded events" })
             }
         }
     }

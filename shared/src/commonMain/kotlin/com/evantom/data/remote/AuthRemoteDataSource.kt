@@ -1,6 +1,7 @@
 package com.evantom.data.remote
 
 import com.evantom.domain.model.AuthUser
+import com.evantom.domain.repository.AuthRemoteDataSource
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.post
@@ -8,16 +9,6 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.serialization.Serializable
-
-/**
- * Credential check against the account service. Data-side plumbing for the
- * login milestone (M2): the login SCREEN is M2, the HTTP surface is shipped
- * and tested here with the fake backend.
- */
-interface AuthRemoteDataSource {
-    /** Returns the signed-in user; throws (HTTP 401) on wrong credentials. */
-    suspend fun login(email: String, password: String): AuthUser
-}
 
 /** Wire format of the `POST /api/login` request body. */
 @Serializable

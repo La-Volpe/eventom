@@ -1,6 +1,6 @@
 package com.evantom.presentation
 
-import com.evantom.data.remote.AuthRemoteDataSource
+import com.evantom.domain.repository.AuthRemoteDataSource
 import com.evantom.data.remote.KtorAuthRemoteDataSource
 import com.evantom.data.fake.fakeBackendEngine
 import com.evantom.domain.model.AuthUser

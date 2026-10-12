@@ -1,6 +1,7 @@
 package com.evantom.data.repository
 
 import com.evantom.data.remote.EventRemoteDataSource
+import com.evantom.data.remote.parseEventCategory
 import com.evantom.domain.model.Event
 import com.evantom.domain.model.EventCategory
 import com.evantom.domain.repository.EventRepository
@@ -11,24 +12,20 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Instant
-
-/** Fixed clock for deterministic tests. */
-private class FixedClock(private val frozen: Instant) : Clock {
-    override fun now(): Instant = frozen
-}
 
 /** Timeout-shaped failure for the HttpTimeout-policy test hook (T2). */
 private class SimulatedReadTimeout : Exception("simulated read timeout")
 
-/** Always fails — exercises the sample-data fallback path. */
-private class FailingRemote : EventRemoteDataSource {
-    override suspend fun fetchEvents(): List<Event> = throw IllegalStateException("offline")
-}
+/** Upstream mapping failure shaped by parseEventCategory's message (T15). */
+private class UpstreamCategoryError(code: String) :
+    IllegalStateException("Unknown event category: \"$code\"")
+
+
 
 /** Plays canned responses call by call, then keeps returning empty. */
 private class ScriptedRemote(responses: List<Result<List<Event>>>) : EventRemoteDataSource {
@@ -44,22 +41,38 @@ class EventRepositoryImplTest {
     private fun makeRepository(remote: EventRemoteDataSource): EventRepositoryImpl =
         EventRepositoryImpl(
             remote = remote,
-            clock = FixedClock(seed),
             // Plain default dispatcher: JVM unit tests have no Main.
             scope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
         )
 
     @Test
-    fun fallsBackToSampleEventsWhenRemoteFails() = runTest {
-        val repository = makeRepository(FailingRemote())
-
-        val result = repository.refresh()
-
-        assertTrue(result.isFailure)
-        assertTrue(
-            repository.observeEvents().first().isNotEmpty(),
-            "sample data should appear after a failed refresh",
+    fun keepsPreviousListWhenRefreshFailsAfterLoad() = runTest {
+        // Plan T12 (D1): no sample fallback — a failed refresh keeps the
+        // previously loaded list observable and surfaces the failure.
+        val priorEvent = Event(
+            id = 9,
+            title = "Prior state event",
+            summary = "",
+            category = EventCategory.SPORTS,
+            startTime = seed + 1.hours,
+            city = "Old town",
+            venue = "Hall 9",
         )
+        val repository = makeRepository(
+            ScriptedRemote(
+                listOf(
+                    Result.success(listOf(priorEvent)),
+                    Result.failure(IllegalStateException("offline")),
+                )
+            )
+        )
+
+        assertTrue(repository.refresh().isSuccess)
+        val prior = repository.observeEvents().first()
+
+        val second = repository.refresh()
+        assertTrue(second.isFailure, "failure must be surfaced for the offline banner")
+        assertEquals(prior, repository.observeEvents().first(), "previous list must be kept after a failed refresh")
     }
 
     @Test
@@ -114,12 +127,13 @@ class EventRepositoryImplTest {
 
     @Test
     fun refreshCarriesSavedFlagsAcrossRemoteData() = runTest {
-        // First call fails -> sample data (events 1..6); user saves event 2;
-        // second call succeeds -> the saved flag survives the merge.
+        // First refresh loads a remote list; user saves event 2; second
+        // refresh (different remote payload, same ids) -> the saved flag
+        // survives the merge. Seeding happens through the remote now that
+        // the sample fallback is gone (plan T12).
         val repository = makeRepository(
             ScriptedRemote(
                 listOf(
-                    Result.failure(IllegalStateException("scripted failure")),
                     Result.success(
                         listOf(
                             Event(
@@ -142,6 +156,28 @@ class EventRepositoryImplTest {
                             ),
                         )
                     ),
+                    Result.success(
+                        listOf(
+                            Event(
+                                id = 2,
+                                title = "Remote event (refreshed)",
+                                summary = "",
+                                category = EventCategory.THEATER,
+                                startTime = seed + 1.hours,
+                                city = "x",
+                                venue = "Hall 1",
+                            ),
+                            Event(
+                                id = 7,
+                                title = "Other (refreshed)",
+                                summary = "",
+                                category = EventCategory.CONCERTS,
+                                startTime = seed + 1.hours,
+                                city = "y",
+                                venue = "Hall 2",
+                            ),
+                        )
+                    ),
                 )
             )
         )
@@ -156,7 +192,25 @@ class EventRepositoryImplTest {
 
     @Test
     fun setSavedTogglesPersistently() = runTest {
-        val repository = makeRepository(FailingRemote())
+        val repository = makeRepository(
+            ScriptedRemote(
+                listOf(
+                    Result.success(
+                        listOf(
+                            Event(
+                                id = 1,
+                                title = "Toggle target",
+                                summary = "",
+                                category = EventCategory.SPORTS,
+                                startTime = seed,
+                                city = "z",
+                                venue = "Hall 1",
+                            ),
+                        )
+                    ),
+                )
+            )
+        )
         repository.refresh()
 
         repository.setSaved(id = 1)
@@ -164,5 +218,38 @@ class EventRepositoryImplTest {
 
         repository.setSaved(id = 1)
         assertFalse(repository.observeEvents().first().first { it.id == 1L }.isSaved)
+    }
+
+    @Test
+    fun unknownCategorySurfacesFailureAndKeepsPriorState() = runTest {
+        // Parse decision pinned: unknown wire codes throw at the mapping site —...
+        val parseError = assertFailsWith<IllegalStateException> { parseEventCategory("burlesque") }
+        assertTrue(parseError.message?.contains("burlesque") == true, parseError.message)
+
+        // Through the repository layer (not just the parser): the remote's
+        // upstream mapping throws; the prior list stays and failure surfaces.
+        val priorEvent = Event(
+            id = 5,
+            title = "Prior state event",
+            summary = "",
+            category = EventCategory.THEATER,
+            startTime = seed + 1.hours,
+            city = "Old town",
+            venue = "Hall 5",
+        )
+        val repository = makeRepository(
+            ScriptedRemote(
+                listOf(
+                    Result.success(listOf(priorEvent)),
+                    Result.failure(UpstreamCategoryError("burlesque")),
+                )
+            )
+        )
+        assertTrue(repository.refresh().isSuccess)
+        val prior = repository.observeEvents().first()
+
+        val second = repository.refresh()
+        assertTrue(second.isFailure, "unknown-category failure must surface through the repository")
+        assertEquals(prior, repository.observeEvents().first(), "prior list must be kept on the parse failure")
     }
 }

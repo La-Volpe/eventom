@@ -1,8 +1,8 @@
 package com.evantom.data.fake
 
-import com.evantom.data.remote.EventDetailRemoteDataSource
+import com.evantom.domain.repository.EventDetailRemoteDataSource
 import com.evantom.data.remote.EventRemoteDataSource
-import com.evantom.data.remote.AuthRemoteDataSource
+import com.evantom.domain.repository.AuthRemoteDataSource
 import com.evantom.data.remote.KtorAuthRemoteDataSource
 import com.evantom.data.remote.KtorEventDetailRemoteDataSource
 import com.evantom.data.remote.KtorEventRemoteDataSource

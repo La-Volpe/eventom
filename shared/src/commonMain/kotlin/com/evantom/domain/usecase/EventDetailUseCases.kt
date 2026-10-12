@@ -1,6 +1,6 @@
 package com.evantom.domain.usecase
 
-import com.evantom.data.remote.EventDetailRemoteDataSource
+import com.evantom.domain.repository.EventDetailRemoteDataSource
 import com.evantom.domain.model.EventDetail
 import kotlinx.coroutines.CancellationException
 

@@ -1,6 +1,6 @@
 package com.evantom.domain.usecase
 
-import com.evantom.data.remote.AuthRemoteDataSource
+import com.evantom.domain.repository.AuthRemoteDataSource
 import com.evantom.domain.model.AuthUser
 import kotlinx.coroutines.CancellationException
 

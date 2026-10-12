@@ -188,6 +188,16 @@ All pinned in `gradle/libs.versions.toml`.
     The plaintext stays ONLY in the user-facing demo hint; the digest is
     provided by the expect/actual `com.evantom.data.sha.sha256Hex` (JVM
     MessageDigest / CommonCrypto `CC_SHA256`).
+19. **Demo content has exactly one source: the API fixtures.**
+    `data/local/` (SampleEvents) is gone — refresh failures keep previously
+    loaded state and surface `Result.failure`; no bundled fallback lists
+    may return.
+20. **Coverage is measured, not chased.** Run
+    `./gradlew :shared:koverHtmlReport` (+ `:shared:koverXmlReport` for
+    machine parsing); HTML lands in `shared/build/reports/kover/html/`.
+    Excluded from counting: `com.evantom.di` (Koin wiring),
+    `com.evantom.data.fake` (offline demo backend — exercised end-to-end by
+    walkthroughs) and `com.evantom.platform` (expect/actual plumbing).
 
 ## Conventions
 

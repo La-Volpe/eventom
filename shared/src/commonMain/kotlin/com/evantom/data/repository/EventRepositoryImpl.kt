@@ -1,6 +1,5 @@
 package com.evantom.data.repository
 
-import com.evantom.data.local.SampleEvents
 import com.evantom.data.remote.EventRemoteDataSource
 import com.evantom.domain.model.Event
 import com.evantom.domain.repository.EventRepository
@@ -11,17 +10,17 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlin.time.Clock
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Remote-first repository that falls back to bundled sample data. Events
- * live in a single [MutableStateFlow] — the hot source of truth both UIs
- * observe. A real product would swap the fallback for a local persistence
- * layer (SQLDelight/DataStore); the observable state shape can stay.
+ * Remote-first repository over a single [MutableStateFlow] — the hot source
+ * of truth both UIs observe. Demo content has exactly one source (the API
+ * fixtures served by the fake backend; AGENT.md gotcha #19): on refresh
+ * failure the previously loaded list stays observable and the failure is
+ * surfaced through the [Result] (the UI maps it to the offline banner) —
+ * there is deliberately no bundled sample fallback.
  */
 class EventRepositoryImpl(
     private val remote: EventRemoteDataSource,
-    private val clock: Clock,
     private val scope: CoroutineScope,
 ) : EventRepository {
 
@@ -40,11 +39,9 @@ class EventRepositoryImpl(
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (error: Exception) {
-        // Network unavailable (or endpoint not real yet): keep the demo alive
-        // with sample data. Real apps surface this via error mapping instead.
-        if (events.value.isEmpty()) {
-            events.value = SampleEvents.list(seed = clock.now() + 500.milliseconds)
-        }
+        // Refresh failed (transport, timeout, parse): keep the previously
+        // loaded observable state untouched — no sample fallback — and let
+        // the failure surface through the Result for the UI banner.
         Result.failure(error)
     }
 

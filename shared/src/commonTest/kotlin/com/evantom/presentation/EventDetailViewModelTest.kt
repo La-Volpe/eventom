@@ -1,7 +1,7 @@
 package com.evantom.presentation
 
 import com.evantom.data.fake.fakeBackendEngine
-import com.evantom.data.remote.EventDetailRemoteDataSource
+import com.evantom.domain.repository.EventDetailRemoteDataSource
 import com.evantom.data.remote.KtorEventDetailRemoteDataSource
 import com.evantom.domain.model.Event
 import com.evantom.domain.model.EventCategory

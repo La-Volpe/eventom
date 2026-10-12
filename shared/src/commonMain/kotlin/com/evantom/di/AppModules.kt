@@ -5,9 +5,9 @@ import com.evantom.data.fake.fakeBackendEngine
 import com.evantom.data.http.httpClientEngine
 import com.evantom.data.remote.EventRemoteDataSource
 import com.evantom.data.remote.KtorEventRemoteDataSource
-import com.evantom.data.remote.EventDetailRemoteDataSource
+import com.evantom.domain.repository.EventDetailRemoteDataSource
 import com.evantom.data.remote.KtorEventDetailRemoteDataSource
-import com.evantom.data.remote.AuthRemoteDataSource
+import com.evantom.domain.repository.AuthRemoteDataSource
 import com.evantom.data.remote.KtorAuthRemoteDataSource
 import com.evantom.data.repository.EventRepositoryImpl
 import com.evantom.domain.repository.EventRepository
@@ -36,7 +36,6 @@ import org.koin.core.component.get
 import org.koin.core.context.startKoin
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import kotlin.time.Clock
 
 /**
  * Koin wiring for the whole shared graph. Both apps start this once at
@@ -85,9 +84,8 @@ val dataModule = module {
     // and tested here so the fake backend is complete from day one.
     single<EventDetailRemoteDataSource> { KtorEventDetailRemoteDataSource(get()) }
     single<AuthRemoteDataSource> { KtorAuthRemoteDataSource(get()) }
-    single<Clock> { Clock.System }
     single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
-    single<EventRepository> { EventRepositoryImpl(get(), get(), get()).apply { bootstrap() } }
+    single<EventRepository> { EventRepositoryImpl(get(), get()).apply { bootstrap() } }
 }
 
 val domainModule = module {

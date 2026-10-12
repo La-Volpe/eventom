@@ -78,7 +78,7 @@ relaunching.
 - Android: `./gradlew :androidApp:installDebug`
 - iOS: `open iosApp/iosApp.xcodeproj` (⌘R), or run the 6-test XCUITest
   walkthrough with `xcodebuild test`.
-- Sign in: `demo@evantom.dev` / `demo1234`
+- Sign in: `demo@eventom.dev` / `demo1234`
 - The fixtures store the SHA-256 hash of that password, not the password.
 
 ## What this is not

@@ -95,7 +95,7 @@ struct EventsView: View {
     @ViewBuilder
     private func header(state: EventsUiState) -> some View {
         HStack(spacing: 8) {
-            EventomWordmark(compact: true)
+            EvenTomWordmark(compact: true)
             Spacer()
             if let userName = sessionBridge.userName {
                 Text("Hi, \(userName)")

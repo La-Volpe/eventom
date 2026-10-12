@@ -11,11 +11,11 @@ plugins {
 }
 
 android {
-    namespace = "com.evantom.android"
+    namespace = "com.eventom.android"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.evantom.android"
+        applicationId = "com.eventom.android"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 26
         targetSdk = 37

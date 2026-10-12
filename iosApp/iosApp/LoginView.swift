@@ -59,7 +59,7 @@ struct LoginView: View {
                     Spacer()
                         .frame(height: 24)
 
-                    EventomWordmark()
+                    EvenTomWordmark()
                 .frame(maxWidth: .infinity, alignment: .center)
             Text("Sign in to see your events")
                 .font(.subheadline)
@@ -118,7 +118,7 @@ struct LoginView: View {
             .disabled(isLoading || email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
 
                     Spacer().frame(height: 14)
-                    Text("Demo account: demo@evantom.dev · demo1234")
+                    Text("Demo account: demo@eventom.dev · demo1234")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)

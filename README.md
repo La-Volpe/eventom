@@ -30,7 +30,7 @@ parsing all run through the normal client pipeline:
 - `GET /api/events` — the event list (Eventim-style categories, prices,
   venues, image refs)
 - `GET /api/event-details/{id}` — per-event details, 404 for unknown ids
-- `POST /api/login` — `demo@evantom.dev` / `demo1234` works, other
+- `POST /api/login` — `demo@eventom.dev` / `demo1234` works, other
   credentials get a 401
 
 The canonical fixtures live in `shared/src/commonMain/resources/api/`, and a

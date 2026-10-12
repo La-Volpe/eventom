@@ -1,11 +1,11 @@
 [
   {
-    "email": "demo@evantom.dev",
+    "email": "demo@eventom.dev",
     "passwordHash": "0ead2060b65992dca4769af601a1b3a35ef38cfad2c2c465bb160ea764157c5d",
     "name": "Demo Fan"
   },
   {
-    "email": "stella@evantom.dev",
+    "email": "stella@eventom.dev",
     "passwordHash": "b638c676930197c2526766aa7b1b2b696f0aae70a5c3107671c9392395e4e222",
     "name": "Stella Sommer"
   }

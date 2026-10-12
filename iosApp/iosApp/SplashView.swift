@@ -22,7 +22,7 @@ struct SplashView: View {
         ZStack {
             EvenTomColors.brightBackground.ignoresSafeArea()
             VStack(spacing: 12) {
-                EventomWordmark()
+                EvenTomWordmark()
                 Rectangle()
                     .fill(EvenTomColors.ticketBlue)
                     .frame(width: accentWidth, height: 3)

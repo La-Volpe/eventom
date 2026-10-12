@@ -58,13 +58,13 @@ xcodebuild ... build   # as above
 APP="$(ls -d ~/Library/Developer/Xcode/DerivedData/iosApp-*/Build/Products/Debug-iphonesimulator/iosApp.app | head -1)"
 xcrun simctl boot "iPhone 17 Pro" 2>/dev/null
 xcrun simctl install "iPhone 17 Pro" "$APP"
-xcrun simctl launch "iPhone 17 Pro" dev.evantom.iosApp
+xcrun simctl launch "iPhone 17 Pro" dev.eventom.iosApp
 xcrun simctl io "iPhone 17 Pro" screenshot /tmp/s.png
 ```
 
 If the app crashes at launch, read
 `~/Library/Logs/DiagnosticReports/iosApp-*.ips` (parse `.ips` as JSON) and/or
-`xcrun simctl launch --console-pty "iPhone 17 Pro" dev.evantom.iosApp` — the
+`xcrun simctl launch --console-pty "iPhone 17 Pro" dev.eventom.iosApp` — the
 latter prints uncaught Kotlin exceptions in full. This is the fastest way to
 debug shared-code crashes on iOS.
 
@@ -194,7 +194,7 @@ uncomment it there if an Intel Mac must build the project.
     mirror store `passwordHash` (SHA-256 hex, lowercase) instead of the
     plaintext; `FakeBackendEngine` compares `sha256Hex(posted password)`.
     The plaintext stays ONLY in the user-facing demo hint; the digest is
-    provided by the expect/actual `com.evantom.data.sha.sha256Hex` (JVM
+    provided by the expect/actual `com.eventom.data.sha.sha256Hex` (JVM
     MessageDigest / CommonCrypto `CC_SHA256`).
 19. **Demo content has exactly one source: the API fixtures.**
     `data/local/` (SampleEvents) is gone — refresh failures keep previously
@@ -203,9 +203,9 @@ uncomment it there if an Intel Mac must build the project.
 20. **Coverage is measured, not chased.** Run
     `./gradlew :shared:koverHtmlReport` (+ `:shared:koverXmlReport` for
     machine parsing); HTML lands in `shared/build/reports/kover/html/`.
-    Excluded from counting: `com.evantom.di` (Koin wiring),
-    `com.evantom.data.fake` (offline demo backend — exercised end-to-end by
-    walkthroughs) and `com.evantom.platform` (expect/actual plumbing).
+    Excluded from counting: `com.eventom.di` (Koin wiring),
+    `com.eventom.data.fake` (offline demo backend — exercised end-to-end by
+    walkthroughs) and `com.eventom.platform` (expect/actual plumbing).
 21. **Navigation is framework-owned on both platforms (plan T18/D4).**
     Android: Compose `NavHost` with typed routes (`splash`, `login`,
     `events`, `about`, `detail/{eventId}`; `navigation-compose 2.9.8`),
@@ -224,6 +224,10 @@ uncomment it there if an Intel Mac must build the project.
 
 ## Conventions
 
+- **Naming:** technical identifiers use `eventom` (all-lowercase; packages,
+  ids, bundle ids); the brand is `EvenTom` (display) / `EVENTOM` (logo).
+  Adding a new identifier uses `eventom`, never the legacy spelling or a
+  mixed third casing — except `EvenTomWordmark`.
 - One Gradle version pin per dependency, all in `gradle/libs.versions.toml`.
 - Shared code is pure Kotlin: no Android/framework classes in `commonMain` —
   platform needs go through `expect/actual` (`data/http`, `data/sha`,

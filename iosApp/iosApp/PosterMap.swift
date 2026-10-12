@@ -8,7 +8,7 @@ import Shared
  * always has artwork).
  *
  * The FALLBACK STEMS come from the shared `categorySpecs` table
- * (`com.evantom.presentation.CategorySpec`) — the single editable source of
+ * (`com.eventom.presentation.CategorySpec`) — the single editable source of
  * truth also consumed by `tools/generate_posters.py`. The display labels
  * (moved out of the domain model, T6) live here as the iOS presentation map;
  * the Android map in PosterMap.kt matches byte-for-byte (XCUITests walk the

@@ -21,9 +21,9 @@ kover {
         filters {
             excludes {
                 packages(
-                    "com.evantom.di",
-                    "com.evantom.data.fake",
-                    "com.evantom.platform",
+                    "com.eventom.di",
+                    "com.eventom.data.fake",
+                    "com.eventom.platform",
                 )
             }
         }
@@ -34,7 +34,7 @@ kotlin {
     // AGP 9 KMP plugin: the Android target is declared `android { }` inside
     // `kotlin { }` (there is no top-level `android { }` with this plugin).
     android {
-        namespace = "com.evantom.shared"
+        namespace = "com.eventom.shared"
         compileSdk = 37
         minSdk = 26
         // Run the common tests also as JVM unit tests (./gradlew :shared:testAndroidHostTest)

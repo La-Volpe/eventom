@@ -39,12 +39,12 @@ WHITE = (255, 255, 255)
 # Per-category palette + stems and the display labels are parsed from the
 # checked-in Kotlin sources so there is ONE editable source of truth (see
 # CategorySpec.kt in shared presentation + the Android label map):
-#   - stems/gradient stops: shared/src/commonMain/kotlin/com/evantom/presentation/CategorySpec.kt
-#   - display labels:       androidApp/src/main/kotlin/com/evantom/android/PosterMap.kt
+#   - stems/gradient stops: shared/src/commonMain/kotlin/com/eventom/presentation/CategorySpec.kt
+#   - display labels:       androidApp/src/main/kotlin/com/eventom/android/PosterMap.kt
 import re
 
-_SPEC_FILE = ROOT / "shared/src/commonMain/kotlin/com/evantom/presentation/CategorySpec.kt"
-_LABEL_FILE = ROOT / "androidApp/src/main/kotlin/com/evantom/android/PosterMap.kt"
+_SPEC_FILE = ROOT / "shared/src/commonMain/kotlin/com/eventom/presentation/CategorySpec.kt"
+_LABEL_FILE = ROOT / "androidApp/src/main/kotlin/com/eventom/android/PosterMap.kt"
 
 
 def _parse_spec() -> dict[str, tuple[tuple[int, int, int], tuple[int, int, int], str]]:

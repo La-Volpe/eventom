@@ -11,7 +11,7 @@ enum EvenTomColors {
 
 /// The EVENTOM wordmark — one face for splash, login and the events header.
 /// `compact` is the appbar-sized variant (splash/login use the full face).
-struct EventomWordmark: View {
+struct EvenTomWordmark: View {
     var compact: Bool = false
 
     var body: some View {

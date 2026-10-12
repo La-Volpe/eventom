@@ -1,0 +1,108 @@
+package com.eventom.android
+
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import org.junit.Rule
+import org.junit.Test
+
+/**
+ * Connected Android walkthrough (plan T13, review G1): splash strings →
+ * login form (demo creds via the UI) → events list (byte-identical QA
+ * strings) → detail (byte-identical detail strings) → back → sign out →
+ * log back in.
+ *
+ * Discipline copied from the iOS suite: existence polls with generous
+ * timeouts instead of one-shot asserts, one journey per app process, no
+ * navigation assumptions between steps. The splash holds the production
+ * timing (1.5s) — the journey catches both splash-strings presence up
+ * front and settles through the hold with waits; production timing is
+ * never altered.
+ */
+class WalkthroughTest {
+
+    @get:Rule
+    val compose = createAndroidComposeRule<MainActivity>()
+
+    /**
+     * Polls until a node with [text] exists (multi-match safe: the events
+     * list shows several cards, so labels like "☆ Save" appear more than
+     * once — the FIRST occurrence is asserted).
+     */
+    private fun waitUntilText(text: String, timeoutMs: Long = 10_000) {
+        compose.waitUntil(timeoutMillis = timeoutMs) {
+            compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onAllNodesWithText(text)[0].assertIsDisplayed()
+    }
+
+    @Test
+    fun walkthroughSplashToEventsDetailAndBackToLogin() {
+        // Splash strings — caught up front, inside the 1.5s window.
+        compose.waitUntil(timeoutMillis = 3_000) {
+            compose.onAllNodesWithText("EVENTOM").fetchSemanticsNodes().isNotEmpty() ||
+                compose.onAllNodesWithText("Sign in to see your events").fetchSemanticsNodes().isNotEmpty()
+        }
+        if (compose.onAllNodesWithText("EVENTOM").fetchSemanticsNodes().isNotEmpty()) {
+            compose.onNodeWithText("Tickets für Live-Entertainment").assertIsDisplayed()
+        }
+
+        // Login form; production splash timing already elapsed by here.
+        waitUntilText("Sign in to see your events")
+        waitUntilText("E-mail", 3_000)
+        waitUntilText("Demo account: demo@eventom.dev · demo1234", 3_000)
+        compose.onNodeWithText("E-mail").performTextInput("demo@eventom.dev")
+        compose.onNodeWithText("Password").performTextInput("demo1234")
+        compose.onNodeWithText("Sign in").performClick()
+
+        // Events list with byte-identical QA strings.
+        waitUntilText("Hi, Demo Fan")
+        waitUntilText("Konzerte", 6_000)
+        waitUntilText("Lachstoff — Abendprogramm", 6_000)
+        waitUntilText("ab 39.90 €", 6_000)
+
+        // Save the first card (state survives the detail round trip).
+        waitUntilText("☆ Save", 6_000)
+        compose.onAllNodesWithText("☆ Save")[0].performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("★ Saved").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // Detail (byte-identical detail strings), CTA + Offline-Demo, back.
+        compose.onAllNodesWithText("Lachstoff — Abendprogramm")[0].performClick()
+        waitUntilText("About this event", 10_000)
+        waitUntilText("Doors: 17:15", 6_000)
+        waitUntilText("Ticket categories", 6_000)
+        waitUntilText("Tickets kaufen", 6_000)
+        compose.onNodeWithText("Tickets kaufen").performClick()
+        waitUntilText("Offline-Demo", 5_000)
+        compose.onNodeWithText("About this event").assertIsDisplayed() // screen stays
+        compose.onNodeWithContentDescription("Back").performClick()
+
+        // Back-stack shape after detail → back: events destination still
+        // composed (greeting, card, bottom-bar tabs) — nav-pop evidence.
+        waitUntilText("Hi, Demo Fan", 10_000)
+        waitUntilText("★ Saved", 6_000)
+        waitUntilText("Lachstoff — Abendprogramm", 6_000)
+        waitUntilText("About", 6_000) // bottom-bar tab missing would mean a swapped stack
+        compose.onNodeWithText("About this event").assertDoesNotExist() // detail popped off
+
+        // Sign out → Login → sign back in (state resets, credentials work).
+        waitUntilText("Sign out", 6_000)
+        compose.onNodeWithText("Sign out").performClick()
+        waitUntilText("Sign in to see your events", 10_000)
+        compose.onNodeWithText("E-mail").performTextInput("stella@eventom.dev")
+        compose.onNodeWithText("Password").performTextInput("sommer1")
+        compose.onNodeWithText("Sign in").performClick()
+        waitUntilText("Hi, Stella Sommer")
+
+        // No stale detail destination left in the back stack: the detail
+        // content must not be composed anywhere on (or behind) the login.
+        compose.onNodeWithText("About this event").assertDoesNotExist()
+        compose.onNodeWithText("Tickets kaufen").assertDoesNotExist()
+    }
+}

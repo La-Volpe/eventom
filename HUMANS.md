@@ -91,5 +91,6 @@ relaunching.
 
 ## More
 
-`AGENTS.md` holds the working conventions and the paid-for gotchas. Review,
-plan, and QA reports live outside the repo, in the orchestrator workspace.
+`AGENTS.md` holds the working conventions, the paid-for gotchas, and our review/QA
+standards. Review, plan, and QA reports live outside the repo, in the orchestrator
+workspace.

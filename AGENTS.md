@@ -251,6 +251,55 @@ uncomment it there if an Intel Mac must build the project.
 - The repo is git (history starts at the first feature-complete commit); no
   remote is configured.
 
+## Code review standards
+
+When asked to review this codebase (or any work in it), meet this bar:
+
+- Read every source and test file before judging; never review from memory.
+- Anchor every claim as `file:line` — an unanchored claim is an opinion, not a finding.
+- Judge against four criteria, each with a verdict:
+  1. **SOLID / Clean Architecture / SoC** — the bar set by this repo: domain owns every
+     boundary interface (`domain/repository/`), domain never imports `data.*`, presentation
+     depends only on domain; measure each principle, name deviations with severity.
+  2. **Presentation confined to native, MVVM** — shared holds zero UI code (grep-verify);
+     native layers are stateless renderers over shared VMs; views never navigate
+     themselves (#14, #21).
+  3. **Shared unit tests with decent coverage** — inventory the suite, name real gaps,
+     quote Kover numbers (#20) — "decent" is measured, never asserted.
+  4. **Not overengineered, but high quality** — no speculative abstraction, WHY comments,
+     cancellation hygiene (#8, #10), decode/memory reasoning for assets (#17).
+- Analyze judgment calls under both readings (e.g. shared view models vs native VMs:
+  intent vs literal wording); the deviation ledger comes with an audit trail.
+- Review-only: change nothing. The deliverable is a dated review with ranked,
+  effort/payoff-sized recommendations; records live outside the repo
+  (orchestrator workspace). Be honest about real weaknesses — rubber stamps get rejected.
+
+## QA standards
+
+A change is green only when ALL three live gates pass:
+
+1. `./gradlew build` — full dual-target build plus all shared suites;
+2. `:androidApp:connectedDebugAndroidTest` — the Android walkthrough (full journey,
+   including navigation route assertions);
+3. `xcodebuild test` — the 6-function XCUITest walkthrough, on the working arm64
+   simulator resolved by UDID (two "iPhone 17 Pro" entries exist; never trust names).
+
+UI-touching changes additionally get hands-on sweeps, recorded in a dated,
+emoji-free table outside the repo (orchestrator `qa/`) with an evidence column per row:
+
+- full journey: splash → login → events → detail → sign-out;
+- saved-flag handoff through the detail route (toggle inside, back, row shows state);
+- back-button sweep (detail → events intact; events → app exits);
+- process-death restore: `adb shell am kill` mid-detail, relaunch, assert route
+  AND content reload (#21: the re-fetch net is required);
+- offline/edge paths: the MockEngine fake cannot fail on-device — pin such paths
+  by unit test and state which test in the record.
+
+Assert counts, not screenshots: `uiautomator` dumps / accessibility reads for strings
+and frames, distinct-color pixel sampling for artwork. Poll with fresh dumps; never
+reuse a stale snapshot. If anything about the environment changed (fresh install,
+rebooted device), rerun the entire sweep from scratch instead of the remembered steps.
+
 ## When adding a feature, the expected diff shape
 
 1. Model/contract in `shared/.../domain` (pure Kotlin; ALL boundary interfaces

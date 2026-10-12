@@ -231,6 +231,16 @@ uncomment it there if an Intel Mac must build the project.
     bridge fails with "Xcode Requested Architecture Not Configured in
     Gradle" — pin `ARCHS=arm64` on the xcodebuild step (also fine: a concrete
     `-destination`, but runner simulator names drift; the ARCHS pin doesn't).
+23. **The tests badge is data, not a sticker — and untracked files are
+    invisible to plain `git diff`.** `.github/badges/tests.json` is the
+    shields.io endpoint payload (label `tests`, message `N passed`); the CI
+    `badge` job recomputes it from BOTH suites' JUnit XML (`test-results/*/
+    *.xml`, host + iOS native) and commits to main — only when the file
+    actually changes, which requires staging it FIRST (`git add`) and
+    comparing against the index: plain `git diff --quiet` on an untracked
+    file always reports "no change" (the badge stayed stale a full run
+    because of exactly this). The README references the raw main-branch URL,
+    so the badge is always the last green run's count.
 
 ## Conventions
 

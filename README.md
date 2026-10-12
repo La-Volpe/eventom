@@ -1,5 +1,7 @@
 # EvenTom
 
+[![tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FLa-Volpe%2Feventom%2Fmain%2F.github%2Fbadges%2Ftests.json)](https://github.com/La-Volpe/eventom/actions/workflows/build.yml)
+
 A ticketing demo in the spirit of Eventim, built as a Kotlin Multiplatform
 project. One shared Kotlin module holds everything that isn't UI, and the
 two platform clients render fully natively — Jetpack Compose on Android,

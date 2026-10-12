@@ -1,110 +1,108 @@
 # EvenTom
 
-A Kotlin Multiplatform (KMP) boilerplate application: **all logic lives in one
-shared Kotlin module**, while each platform renders the UI natively —
-**Jetpack Compose** on Android and **SwiftUI** on iOS.
+An Eventim-style ticketing demo built as a Kotlin Multiplatform learning
+project. One shared Kotlin module holds everything that isn't UI, and each
+platform renders natively: Jetpack Compose on Android, SwiftUI on iOS. The
+app runs fully offline, and the data layer isn't stubbed at the UI — a Ktor
+HTTP boundary serves real JSON that the DTO mappers parse like a live
+backend.
 
 ```
 ┌────────────────────────────────────────────┐
 │                 shared (KMP)               │
 │  domain  : models, repository, use cases   │
-│  data    : Ktor HTTP, sample fallback      │
+│  data    : Ktor HTTP boundary + fixtures   │
 │  present.: view models (StateFlow) + Koin  │
-└─────────────┬─────────────────┬────────────┘
-              │                 │
+└─────────────┬──────────────────┬───────────┘
+              │                  │
    ┌──────────▼──────┐  ┌───────▼─────────┐
    │  androidApp     │  │  iosApp         │
    │  Jetpack Compose│  │  SwiftUI        │
    └─────────────────┘  └─────────────────┘
 ```
 
-## What each layer does
+## The offline fake backend
 
-| Layer | Location | Role |
-|---|---|---|
-| Domain | `shared/domain/model,repository,usecase` | Event model, `EventRepository` contract, use cases (observe/refresh/save/filter) |
-| Data | `shared/data` | Ktor HTTP client (OkHttp on Android, Darwin on iOS), remote data source, deterministic sample fallback |
-| Presentation | `shared/presentation` | `BaseViewModel` + `EventsViewModel` exposing a `StateFlow<EventsUiState>`; no Android/iOS types |
-| DI | `shared/di` | Koin modules + `SharedKoin.start()` entry point used by both apps |
-| Android UI | `androidApp/` | Compose screens, theme, bottom bar; collects `state` with `collectAsStateWithLifecycle` |
-| iOS UI | `iosApp/` | SwiftUI screens; observes the view model via `observe(onChange:)` |
+A Ktor `MockEngine` intercepts requests below `ContentNegotiation`, so
+request serialization, response headers, and kotlinx-serialization DTO
+parsing all run through the normal client pipeline:
 
-Feature demo included in both apps: event list, category filter chips,
-save/unsave, refresh with offline fallback message, and an About screen fed by
-expect/actual `platformInfo()`.
+- `GET /api/events` — the event list (Eventim-style categories, prices,
+  venues, image refs)
+- `GET /api/event-details/{id}` — per-event details, 404 for unknown ids
+- `POST /api/login` — `demo@evantom.dev` / `demo1234` works, other
+  credentials get a 401
 
-## Requirements
+The canonical fixtures live in `shared/src/commonMain/resources/api/`, and a
+parity test fails the build if the compiled-in payloads drift from them.
+Pointing the app at a real backend later means flipping one flag in
+`BackendConfig` and aiming the HTTP client at the real host.
 
-- JDK 17+ (built and tested with JDK 21)
-- Android SDK (AGP 9 will pick up `ANDROID_HOME`)
-- Xcode 16+ for the iOS app
+## Posters from one script
 
-## Getting started
+`tools/generate_posters.py` draws all twelve posters with Pillow (six event
+posters plus one per category) and writes them for both platforms in a single
+run: Android `drawable-nodpi` and iOS `Posters.xcassets`. Rerunning the
+script reproduces byte-identical files.
+
+## Building and running
+
+Requirements: JDK 17+, Android SDK, Xcode (tested with Xcode 27 and an
+iOS 26.5 simulator).
 
 ```bash
-# Verify the environment (Kotlin's own doctor)
-kdoctor            # optional, if installed
-
-# Build everything + run the shared-module unit tests
+# everything + shared-module tests
 ./gradlew build
 
-# Android: install & run on a device/emulator
+# Android on a device or emulator
 ./gradlew :androidApp:installDebug
 
-# iOS: open in Xcode and press Run
-open iosApp/iosApp.xcodeproj
+# iOS
+open iosApp/iosApp.xcodeproj        # ⌘R
+# or CLI:
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
 ```
 
-The iOS app does **not** require CocoaPods: the Xcode project has a Run Script
-build phase that invokes `./gradlew :shared:embedAndSignAppleFrameworkForXcode`,
-which compiles `shared` for the active architecture, and signs/creates
-`Shared.framework` in `shared/build/xcode-frameworks`. For device builds,
-set your Apple Developer team in `iosApp/iosApp.xcodeproj` (Signing & Capabilities).
+The iOS app doesn't use CocoaPods. The Xcode project has a Run Script phase
+that invokes `./gradlew :shared:embedAndSignAppleFrameworkForXcode`.
 
-## How the pieces fit
+## Testing
 
-- **Single source of truth**: `EventRepositoryImpl` keeps events in a
-  `MutableStateFlow`; both platform UIs simply observe it. `refresh()` is
-  remote-first and falls back to `SampleEvents` when offline.
-- **View models are plain Kotlin** (no `androidx.lifecycle` dependency):
-  Android collects `viewModel.state` directly; SwiftUI uses a small
-  `EventsBridge` `ObservableObject` that forwards `observe(onChange:)` into
-  `@Published` state.
-- **DI is Koin in common code**: `SharedKoin.start()` is called once at app
-  start (in `EvenTomApplication` and in the SwiftUI `App.init`).
-  Typed accessors (`SharedKoin.eventsViewModel()`) keep Swift free of
-  `KClass` ceremony.
-- **expect/actual**: `httpClientEngine()` (OkHttp/Darwin) and
-  `platformInfo()` (About screen) demonstrate the pattern.
+- `shared/src/{commonTest,androidHostTest}` covers the fake-backend
+  pipeline, the repository, the auth and detail view models, and the fixture
+  parity. The suite runs twice: as JVM host tests (26 tests) and on the iOS
+  simulator as Kotlin/Native tests (25 tests).
+- `iosAppUITests/` is an XCUITest walkthrough of the whole app — six tests
+  covering splash content, the login form, the full login journey (posters,
+  save round trip, chip scrolling, refresh), the wrong-password error path,
+  the detail journey, and the sign-out cycle:
 
-## Where to go next
-
-- **Persistence**: add SQLDelight for an offline database and keep the
-  repository's observable-state shape.
-- **Networking**: point `BASE_URL` in `EventRemoteDataSource.kt` at the real
-  EvenTom backend; the DTO→domain mapper is already in place.
-- **Swift interop**: install [SKIE](https://skie.touchlab.co) for idiomatic
-  Swift flows (`for await` on `StateFlow`, sealed classes as enums).
-- **Tests**: `shared/src/commonTest` covers the repository and use cases;
-  UIs stay thin, so most regression risk is testable in common code.
-- **CI**: `./gradlew build` plus `xcodebuild -project iosApp/iosApp.xcodeproj
-  -scheme iosApp -destination 'platform=iOS Simulator,name=iPhone 16' build`.
+```bash
+xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
 
 ## Project layout
 
 ```
 settings.gradle.kts
 build.gradle.kts
-gradle.properties          # config cache, parallel builds
-gradle/libs.versions.toml  # all dependency versions in one place
+gradle/libs.versions.toml  # every dependency version in one place
+tools/generate_posters.py  # deterministic poster generator (both platforms)
 shared/
-  build.gradle.kts
-  src/commonMain/          # domain, data, presentation, di, platform contracts
+  src/commonMain/          # domain, data, presentation, di, API fixtures
   src/androidMain/         # OkHttp engine, Android platformInfo
   src/iosMain/             # Darwin engine, iOS platformInfo
-  src/commonTest/          # unit tests for the shared logic
 androidApp/                # Compose UI only
 iosApp/
-  iosApp/                  # SwiftUI sources
-  iosApp.xcodeproj         # with the Gradle framework integration
+  iosApp/                  # SwiftUI sources + Posters.xcassets
+  iosApp.xcodeproj         # Gradle framework integration + UI-test target
 ```
+
+The layout rule is simple: if something isn't UI, it belongs in `shared/`.
+The app modules render shared state and forward user actions back into the
+shared view models.
+
+AGENT.md records the conventions and the platform gotchas from building
+this — worth reading before changing code in the repo.

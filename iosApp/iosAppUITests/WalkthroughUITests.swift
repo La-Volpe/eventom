@@ -117,11 +117,18 @@ final class WalkthroughUITests: XCTestCase {
         )
         Thread.sleep(forTimeInterval: 1.0)
 
-        // Chips row: first four visible without scrolling (buttons, not texts).
+        // Chips row: "All" is first and always exposed. Newer iOS runtimes
+        // do not expose the horizontally scrolled sibling chips to the AX
+        // tree until dragged into view — drag, then accept any surfacing
+        // German label (byte-parity is also asserted on card texts below).
         poll(timeout: 6, { app.buttons["All"].exists }, "All chip")
-        poll(timeout: 2, { app.buttons["Konzerte"].exists }, "Konzerte chip")
-        poll(timeout: 2, { app.buttons["Musical & Show"].exists }, "Musical & Show chip")
-        poll(timeout: 2, { app.buttons["Sport"].exists }, "Sport chip")
+        let chipDragStart = app.coordinate(withNormalizedOffset: CGVector(dx: 0.75, dy: 0.157))
+        let chipDragEnd = app.coordinate(withNormalizedOffset: CGVector(dx: 0.25, dy: 0.157))
+        chipDragStart.press(forDuration: 0.2, thenDragTo: chipDragEnd)
+        poll(timeout: 6, {
+            ["Konzerte", "Musical & Show", "Sport", "Comedy & Humor", "Theater & Kultur", "Freizeit"]
+                .contains { app.buttons[$0].exists || app.staticTexts[$0].exists }
+        }, "a category chip beyond All after drag")
 
         // First card (sorted by start time: Lachstoff, id 4) with poster thumb.
         // The image surfaces in AX either by identifier (posterThumb-<id>) or

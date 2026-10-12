@@ -112,7 +112,7 @@ fun EventsScreen(
                 FilterChip(
                     selected = viewState.selectedCategory == category,
                     onClick = { onSelect(category) },
-                    label = { Text(category.label) },
+                    label = { Text(categoryLabel(category)) },
                 )
             }
         }
@@ -156,8 +156,10 @@ private fun EventCard(
     Card(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
         Row {
             // Poster thumbnail (offline artwork); decorative — title text follows.
+            // T5: list rows decode the 480×600 thumb (~1.2MB ARGB_8888) instead
+            // of the ~29MB hero decode — the card-scroll budget. Detail keeps hero.
             Image(
-                painter = painterResource(posterResFor(event.imageRef, event.category)),
+                painter = painterResource(posterThumbResFor(event.imageRef, event.category)),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
@@ -173,7 +175,7 @@ private fun EventCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(event.category.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(categoryLabel(event.category), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.weight(1f))
                     TextButton(onClick = onToggleSaved) {
                         Text(if (event.isSaved) "★ Saved" else "☆ Save")

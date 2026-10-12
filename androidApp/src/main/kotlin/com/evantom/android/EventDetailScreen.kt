@@ -242,7 +242,7 @@ private fun EventDetailContent(
                     .padding(16.dp),
             ) {
                 Text(
-                    event.category.label,
+                    categoryLabel(event.category),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),

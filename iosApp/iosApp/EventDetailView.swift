@@ -278,7 +278,7 @@ private struct EventDetailContent: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
             // Category accent chip (over the dark scrim's ground).
-            Text(event.category.label)
+            Text(categoryDisplayName(event.category))
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)

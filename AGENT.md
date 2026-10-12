@@ -174,6 +174,20 @@ All pinned in `gradle/libs.versions.toml`.
     view model resolves its list event *after* the fetch completes via
     `repository.observeEvents()` — never a one-shot snapshot — so the
     rendered event mirrors current `isSaved` flags.
+17. **Posters come in a hero/thumb pair; regenerate, never hand-edit.**
+    `tools/generate_posters.py` emits both platforms in one run: hero
+    1200×1500 and thumb 480×600 (`poster_event_N_thumb`). Lists decode the
+    thumb (~1.2MB ARGB_8888), detail screens the hero (~29MB decode) — see
+    call-site comments. Lookup helpers: `PosterMap.kt` (posterResFor /
+    posterThumbResFor) and `PosterMap.swift`. The script parses its palette
+    and stems from `CategorySpec.kt` + the Android label map — one editable
+    source of truth for category metadata.
+18. **Demo passwords are hashed in fixtures.** `users.json` + its embedded
+    mirror store `passwordHash` (SHA-256 hex, lowercase) instead of the
+    plaintext; `FakeBackendEngine` compares `sha256Hex(posted password)`.
+    The plaintext stays ONLY in the user-facing demo hint; the digest is
+    provided by the expect/actual `com.evantom.data.sha.sha256Hex` (JVM
+    MessageDigest / CommonCrypto `CC_SHA256`).
 
 ## Conventions
 

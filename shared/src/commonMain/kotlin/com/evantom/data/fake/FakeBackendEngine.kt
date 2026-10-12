@@ -2,6 +2,7 @@ package com.evantom.data.fake
 
 import com.evantom.data.remote.LoginRequestDto
 import com.evantom.data.remote.UserDto
+import com.evantom.data.sha.sha256Hex
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -79,10 +80,12 @@ private suspend fun MockRequestHandleScope.respondToLogin(
     } catch (_: Exception) {
         return respondJsonError(HttpStatusCode.BadRequest, "malformed login request")
     }
-    // Demo accounts ship with FakeApiPayloads (mirroring api/users.json).
-    // A real backend would hash+salt; a static demo just compares plaintext.
+    // Demo accounts ship with FakeApiPayloads (mirroring api/users.json),
+    // which store SHA-256 hex of the demo passwords (AGENT.md #18). The posted
+    // password is hashed for the comparison; its plaintext is never logged
+    // and never stored.
     val account = json.decodeFromString<List<FakeUserAccount>>(FakeApiPayloads.USERS_JSON)
-        .firstOrNull { it.email == login.email && it.password == login.password }
+        .firstOrNull { it.email == login.email && it.passwordHash == sha256Hex(login.password) }
     return if (account != null) {
         respondJson(json.encodeToString(UserDto(email = account.email, name = account.name)))
     } else {
@@ -93,6 +96,7 @@ private suspend fun MockRequestHandleScope.respondToLogin(
 @kotlinx.serialization.Serializable
 internal data class FakeUserAccount(
     val email: String,
-    val password: String,
+    /** SHA-256 hex of the demo password; the plaintext stays a UI hint only. */
+    val passwordHash: String,
     val name: String,
 )

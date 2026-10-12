@@ -29,29 +29,62 @@ OUT_DIR = ROOT / "androidApp/src/main/res/drawable-nodpi"
 # live in its own Assets.xcassets without touching poster artifacts.
 IOS_CATALOG = ROOT / "iosApp/iosApp/Posters.xcassets"
 
-WIDTH, HEIGHT = 1200, 1500          # 4:5, comfortably >= 1000px wide
+WIDTH, HEIGHT = 1200, 1500          # hero: 4:5, comfortably >= 1000px wide
+# Thumb pair (T5): same art downscaled deterministically; 480×600 decodes at
+# ~1.2MB ARGB_8888 vs ~29MB for the hero — the whole card-scroll budget.
+THUMB_SIZE = (480, 600)
 TICKET_BLUE = (28, 110, 232)        # #1C6EE8 — Eventim brand blue
 WHITE = (255, 255, 255)
 
-# Same two-stop gradients the detail screen's hero uses.
-CATEGORY_GRADIENTS: dict[str, tuple[tuple, tuple]] = {
-    "concerts":     ((0x1C, 0x6E, 0xE8), (0x0F, 0x3F, 0xA0)),
-    "musical-show": ((0x7B, 0x3F, 0xE4), (0x4A, 0x1E, 0x9E)),
-    "sports":       ((0x0E, 0x9F, 0x6E), (0x06, 0x65, 0x44)),
-    "comedy":       ((0xF5, 0x9E, 0x0B), (0xB4, 0x53, 0x09)),
-    "theater":      ((0xDC, 0x26, 0x62), (0x9A, 0x1F, 0x1F)),
-    "leisure":      ((0x06, 0xB6, 0xD4), (0x03, 0x7A, 0x9C)),
-}
+# Per-category palette + stems and the display labels are parsed from the
+# checked-in Kotlin sources so there is ONE editable source of truth (see
+# CategorySpec.kt in shared presentation + the Android label map):
+#   - stems/gradient stops: shared/src/commonMain/kotlin/com/evantom/presentation/CategorySpec.kt
+#   - display labels:       androidApp/src/main/kotlin/com/evantom/android/PosterMap.kt
+import re
 
-# Labels as the app renders them (EventCategory.label in the domain enum).
-CATEGORY_LABELS: dict[str, str] = {
-    "concerts":     "Konzerte",
-    "musical-show": "Musical & Show",
-    "sports":       "Sport",
-    "comedy":       "Comedy & Humor",
-    "theater":      "Theater & Kultur",
-    "leisure":      "Freizeit",
-}
+_SPEC_FILE = ROOT / "shared/src/commonMain/kotlin/com/evantom/presentation/CategorySpec.kt"
+_LABEL_FILE = ROOT / "androidApp/src/main/kotlin/com/evantom/android/PosterMap.kt"
+
+
+def _parse_spec() -> dict[str, tuple[tuple[int, int, int], tuple[int, int, int], str]]:
+    """wire code -> ((top rgb), (bottom rgb), stem) from CategorySpec.kt."""
+    text = _SPEC_FILE.read_text(encoding="utf-8")
+    parsed = {}
+    for match in re.finditer(
+        r'EventCategory\.(\w+) to CategorySpec\("([\w-]+)", (0x[0-9A-Fa-f]+), (0x[0-9A-Fa-f]+)\)',
+        text,
+    ):
+        enum_name, stem, top, bottom = match.groups()
+        # Kotlin UPPER_SNAKE -> wire code (lowercase, _ -> -)
+        code = enum_name.lower().replace("_", "-")
+        top_rgb = tuple((int(top, 16) >> shift) & 0xFF for shift in (16, 8, 0))
+        bottom_rgb = tuple((int(bottom, 16) >> shift) & 0xFF for shift in (16, 8, 0))
+        parsed[code] = (top_rgb, bottom_rgb, stem)
+    if not parsed:
+        raise SystemExit("no CategorySpec entries parsed from " + str(_SPEC_FILE))
+    return parsed
+
+
+def _parse_labels() -> dict[str, str]:
+    """wire code -> display label from the Android presentation label map."""
+    text = _LABEL_FILE.read_text(encoding="utf-8")
+    parsed = {_wire_code(m.group(1)): m.group(2) for m in re.finditer(
+        r'EventCategory\.(\w+) -> "([^"]+)"', text,
+    )}
+    if not parsed:
+        raise SystemExit("no labels parsed from " + str(_LABEL_FILE))
+    return parsed
+
+
+def _wire_code(enum_name: str) -> str:
+    return enum_name.lower().replace("_", "-")
+
+
+_SPEC = _parse_spec()
+CATEGORY_GRADIENTS: dict[str, tuple[tuple, tuple]] = {c: (v[0], v[1]) for c, v in _SPEC.items()}
+CATEGORY_STEMS: dict[str, str] = {c: v[2] for c, v in _SPEC.items()}
+CATEGORY_LABELS: dict[str, str] = _parse_labels()
 
 FONT_CANDIDATES = [
     "/System/Library/Fonts/SFNS.ttf",        # SF Pro (variable) → Bold variation
@@ -164,17 +197,22 @@ def render_poster(title: str, category: str) -> Image.Image:
 
 
 def verify(paths: list[Path]) -> None:
-    print(f"{'file':34} {'dims':12} {'ratio':6} {'colors':7} check")
+    print(f"{'file':38} {'dims':12} {'ratio':6} {'KB':>8} {'colors':7} check")
     ok = True
     for path in paths:
         img = Image.open(path).convert("RGB")
         w, h = img.size
         ratio = h / w
         distinct = len(img.resize((80, 100)).getcolors(maxcolors=1_000_000))
-        passed = w >= 1000 and 1.15 <= ratio <= 1.35 and distinct >= 3
+        is_thumb = path.stem.lower().endswith("thumb") or "_thumb" in path.name
+        if is_thumb:
+            passed = (w, h) == THUMB_SIZE and distinct >= 3
+        else:
+            passed = w >= 1000 and 1.15 <= ratio <= 1.35 and distinct >= 3
         ok &= passed
+        size_kb = path.stat().st_size / 1024
         print(
-            f"{path.name:34} {w}x{h:<8} {ratio:4.2f}   {distinct:<7} {'PASS' if passed else 'FAIL'}"
+            f"{path.name:38} {w}x{h:<8} {ratio:4.2f}  {size_kb:7.0f}  {distinct:<7} {'PASS' if passed else 'FAIL'}"
         )
     if not ok:
         print("VERIFICATION FAILED")
@@ -221,20 +259,28 @@ def main() -> None:
     # Per-event posters (list payload drives ids).
     for event in events:
         event_id, title, category = event["id"], event["title"], event["category"]
-        path = OUT_DIR / f"poster_event_{event_id}.png"
-        render_poster(title, category).save(path, "PNG", optimize=True)
-        written.append(path)
+        hero_path = OUT_DIR / f"poster_event_{event_id}.png"
+        thumb_path = OUT_DIR / f"poster_event_{event_id}_thumb.png"
+        image = render_poster(title, category)
+        image.save(hero_path, "PNG", optimize=True)
+        image.resize(THUMB_SIZE, Image.LANCZOS).save(thumb_path, "PNG", optimize=True)
+        written.append(hero_path)
+        written.append(thumb_path)
     # Per-category fallbacks (sample-data path).
     # NOTE: res file names may only contain [a-z0-9_.] — sanitize "-" → "_";
     # imageRef values use the sanitized name ("poster_musical_show").
-    for category in CATEGORY_LABELS:
-        path = OUT_DIR / f"poster_{category.replace('-','_')}.png"
-        render_poster(CATEGORY_LABELS[category], category).save(path, "PNG", optimize=True)
-        written.append(path)
+    for category in CATEGORY_STEMS:
+        stem = CATEGORY_STEMS[category]
+        image = render_poster(CATEGORY_LABELS[category], category)
+        image.save(OUT_DIR / f"{stem}.png", "PNG", optimize=True)
+        written.append(OUT_DIR / f"{stem}.png")
+        image.resize(THUMB_SIZE, Image.LANCZOS).save(OUT_DIR / f"{stem}_thumb.png", "PNG", optimize=True)
+        written.append(OUT_DIR / f"{stem}_thumb.png")
 
     verify(written)
 
     # iOS: same renders, emitted as an asset catalog (one source of truth).
+    # Hero materials as-is; thumbs emitted as *_Thumb imagesets (T5 pairing).
     IOS_CATALOG.mkdir(parents=True, exist_ok=True)
     # Root manifest is required for actool to treat the folder as a catalog.
     (IOS_CATALOG / "Contents.json").write_text(
@@ -243,9 +289,15 @@ def main() -> None:
     )
     ios_imagesets = {}
     for event in events:
-        ios_imagesets[f"poster_event_{event['id']}"] = render_poster(event["title"], event["category"])
-    for category in CATEGORY_LABELS:
-        ios_imagesets[f"poster_{category.replace('-','_')}"] = render_poster(CATEGORY_LABELS[category], category)
+        image = render_poster(event["title"], event["category"])
+        ios_imagesets[f"poster_event_{event['id']}"] = image
+        ios_imagesets[f"poster_event_{event['id']}_thumb"] = image.resize(THUMB_SIZE, Image.LANCZOS)
+    for category in CATEGORY_STEMS:
+        stem = CATEGORY_STEMS[category]
+        label = CATEGORY_LABELS[category]
+        image = render_poster(label, category)
+        ios_imagesets[stem] = image
+        ios_imagesets[f"{stem}_thumb"] = image.resize(THUMB_SIZE, Image.LANCZOS)
     write_ios_catalog(ios_imagesets)
     ios_written = list(IOS_CATALOG.glob("*.imageset/*.png"))
     print(f"\niOS catalog: {len(ios_imagesets)} imagesets in {IOS_CATALOG.relative_to(ROOT)}")

@@ -3,17 +3,18 @@ package com.evantom.domain.model
 import kotlin.time.Instant
 
 /**
- * Eventim-style categories (design notes, M1): Konzerte, Musical & Show,
- * Sport, Comedy & Humor, Theater & Kultur, Freizeit. `label` is the string
- * the UI renders for chips/nav — kept here so every platform shows the same.
+ * Eventim-style categories (design notes, M1). Presentation-free: the
+ * German display labels live in the per-platform presentation maps
+ * (androidApp `PosterMap.kt`, iOS `PosterMap.swift`) — never here
+ * (review F2 / plan T6).
  */
-enum class EventCategory(val label: String) {
-    CONCERTS("Konzerte"),
-    MUSICAL_SHOW("Musical & Show"),
-    SPORTS("Sport"),
-    COMEDY("Comedy & Humor"),
-    THEATER("Theater & Kultur"),
-    LEISURE("Freizeit");
+enum class EventCategory {
+    CONCERTS,
+    MUSICAL_SHOW,
+    SPORTS,
+    COMEDY,
+    THEATER,
+    LEISURE;
 
     companion object {
         val ordered: List<EventCategory> = entries

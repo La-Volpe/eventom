@@ -38,7 +38,18 @@ final class EventsBridge: ObservableObject {
 final class SessionBridge: ObservableObject {
     @Published var userName: String?
 
-    private let session = SharedKoin.shared.sessionStore()
+    // Composition-root resolution happens at bridge construction (T10: views
+    // never resolve the locator mid-view — the view calls closures only).
+    private let session: SessionStore
+
+    init(session: SessionStore = SharedKoin.shared.sessionStore()) {
+        self.session = session
+    }
+
+    /// Sign-out flows through the bridge; the view only calls closures.
+    func signOut() {
+        session.signOut()
+    }
     private var observation: UiObservation?
 
     func startObserving() {
@@ -91,7 +102,7 @@ struct EventsView: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(EvenTomColors.ticketBlue)
                 Button("Sign out") {
-                    SharedKoin.shared.sessionStore().signOut()
+                    sessionBridge.signOut()
                     onSignOut()
                 }
                 .font(.footnote)
@@ -136,7 +147,7 @@ struct EventsView: View {
                     bridge.viewModel.select(category: nil)
                 }
                 ForEach(state.categories, id: \.name) { category in
-                    chip(title: category.label, selected: state.selectedCategory == category) {
+                    chip(title: categoryDisplayName(category), selected: state.selectedCategory == category) {
                         bridge.viewModel.select(category: category)
                     }
                 }
@@ -216,7 +227,7 @@ private struct EventCard: View {
             // Poster thumbnail (offline artwork). The AX element surfaces with
             // the asset name as its label (observed stable in the AX tree);
             // the label/identifier below are best-effort extras for VO/tests.
-            Image(posterImageName(imageRef: event.imageRef, category: event.category))
+            Image(posterThumbImageName(imageRef: event.imageRef, category: event.category))
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 104, height: 104)
@@ -225,7 +236,7 @@ private struct EventCard: View {
                 .accessibilityIdentifier("posterThumb-\(event.id)")
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(event.category.label)
+                Text(categoryDisplayName(event.category))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(EvenTomColors.ticketBlue)
                     Spacer()

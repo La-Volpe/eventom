@@ -22,7 +22,11 @@ kotlin {
     }
     iosArm64()
     iosSimulatorArm64()
-    iosX64()
+    // T9: iosX64 removed from the default target set (Intel-Mac sim builds no
+    // longer exercised). Intel-Mac users: uncomment the line below — the
+    // Xcode" embedAndSign" phase (`:shared:embedAndSignAppleFrameworkForXcode`)
+    // covers it automatically once present.
+    // iosX64()
 
     // The framework the Xcode app embeds (see iosApp build phase:
     // `:shared:embedAndSignAppleFrameworkForXcode`).

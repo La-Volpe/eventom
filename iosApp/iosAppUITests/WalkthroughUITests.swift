@@ -237,12 +237,17 @@ final class WalkthroughUITests: XCTestCase {
         // Screen stays: the CTA is still there.
         XCTAssertTrue(app.buttons["Tickets kaufen"].exists, "detail stays after demo CTA")
 
+        // NavigationStack route evidence: the pushed detail hides the tab bar
+        // (NavigationStack sits above the TabView), and it returns on pop.
+        poll(timeout: 6, { !app.tabBars.buttons["Events"].exists }, "tab bar hidden while detail is pushed")
+
         // Back → Events with state intact.
         let back = app.buttons["detailBack"]
         poll(timeout: 5, { back.exists }, "back control present")
         Thread.sleep(forTimeInterval: 0.6)
         tapFrame(of: back, in: app)
         poll(timeout: 10, { app.staticTexts["Hi, Demo Fan"].exists }, "greeting intact after back")
+        poll(timeout: 8, { app.tabBars.buttons["Events"].exists }, "tab bar restored after pop")
         poll(timeout: 6, { saveToggle.exists && saveToggle.label == "Unsave" }, "saved state intact after detail journey")
 
         // --- Stadtderby (id 3) route as well ---

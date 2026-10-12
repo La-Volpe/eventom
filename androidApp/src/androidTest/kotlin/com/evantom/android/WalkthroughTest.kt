@@ -83,10 +83,13 @@ class WalkthroughTest {
         compose.onNodeWithText("About this event").assertIsDisplayed() // screen stays
         compose.onNodeWithContentDescription("Back").performClick()
 
-        // State intact after the round trip: greeting + saved star.
+        // Back-stack shape after detail → back: events destination still
+        // composed (greeting, card, bottom-bar tabs) — nav-pop evidence.
         waitUntilText("Hi, Demo Fan", 10_000)
         waitUntilText("★ Saved", 6_000)
         waitUntilText("Lachstoff — Abendprogramm", 6_000)
+        waitUntilText("About", 6_000) // bottom-bar tab missing would mean a swapped stack
+        compose.onNodeWithText("About this event").assertDoesNotExist() // detail popped off
 
         // Sign out → Login → sign back in (state resets, credentials work).
         waitUntilText("Sign out", 6_000)
@@ -96,5 +99,10 @@ class WalkthroughTest {
         compose.onNodeWithText("Password").performTextInput("sommer1")
         compose.onNodeWithText("Sign in").performClick()
         waitUntilText("Hi, Stella Sommer")
+
+        // No stale detail destination left in the back stack: the detail
+        // content must not be composed anywhere on (or behind) the login.
+        compose.onNodeWithText("About this event").assertDoesNotExist()
+        compose.onNodeWithText("Tickets kaufen").assertDoesNotExist()
     }
 }

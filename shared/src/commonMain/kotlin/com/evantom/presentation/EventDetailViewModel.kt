@@ -6,6 +6,7 @@ import com.evantom.domain.repository.EventRepository
 import com.evantom.domain.usecase.FetchEventDetailUseCase
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
+import com.evantom.core.UiObservation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 
@@ -51,16 +52,18 @@ class EventDetailViewModel(
         if (state.value is EventDetailUiState.Loading) return
         launch {
             updateState { EventDetailUiState.Loading }
-            val event = events.first().firstOrNull { it.id == eventId }
-                ?: return@launch updateState { EventDetailUiState.Error(eventMissingMessage) }
-
             val outcome = fetchDetail(id = eventId)
+            // Resolve the list event AFTER the fetch completes, from the LIVE
+            // repository stream — the rendered Event mirrors current isSaved
+            // flags instead of a stale one-shot snapshot (repo gotcha: detail
+            // snapshot freshness).
+            val event = events.first().firstOrNull { it.id == eventId }
             updateState { _ ->
-                val detail = outcome.getOrNull()
-                if (detail != null) {
-                    EventDetailUiState.Success(event = event, detail = detail)
-                } else {
-                    EventDetailUiState.Error(failureMessage(outcome.exceptionOrNull()))
+                when {
+                    outcome.getOrNull() != null && event != null ->
+                        EventDetailUiState.Success(event = event, detail = outcome.getOrNull()!!)
+                    event == null -> EventDetailUiState.Error(eventMissingMessage)
+                    else -> EventDetailUiState.Error(failureMessage(outcome.exceptionOrNull()))
                 }
             }
         }

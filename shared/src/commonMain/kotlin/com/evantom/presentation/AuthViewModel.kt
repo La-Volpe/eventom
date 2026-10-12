@@ -5,6 +5,7 @@ import com.evantom.domain.usecase.LoginUseCase
 import com.evantom.session.SessionStore
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
+import com.evantom.core.UiObservation
 import kotlinx.coroutines.CoroutineScope
 
 /**

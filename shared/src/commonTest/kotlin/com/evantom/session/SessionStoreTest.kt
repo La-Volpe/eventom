@@ -1,7 +1,7 @@
 package com.evantom.session
 
 import com.evantom.domain.model.AuthUser
-import com.evantom.presentation.UiObservation
+import com.evantom.core.UiObservation
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

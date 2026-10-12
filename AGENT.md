@@ -162,6 +162,18 @@ All pinned in `gradle/libs.versions.toml`.
     `.longValue`/`.doubleValue` in Swift. UIs start observations on appear,
     stop on disappear, and screens reset their view model once on leave
     (single owner of transitions — views don't navigate themselves).
+15. **HTTP timeouts are an explicit shared policy, and logging redacts.**
+    `HttpTimeout` is installed on the shared client (request 15s, connect
+    10s) instead of trusting engine defaults — OkHttp and NSURLSession
+    disagree on defaults, so the policy must live in one place. Ktor logging
+    runs at `LogLevel.INFO` only: request line/status metadata, never
+    request/response bodies — demo credentials must never reach a log.
+    While `BackendConfig.useFakeBackend = true` the logging plugin is
+    not installed at all (the fake demo must not spam logcat).
+16. **Detail pages resolve through the LIVE repository stream.** The detail
+    view model resolves its list event *after* the fetch completes via
+    `repository.observeEvents()` — never a one-shot snapshot — so the
+    rendered event mirrors current `isSaved` flags.
 
 ## Conventions
 

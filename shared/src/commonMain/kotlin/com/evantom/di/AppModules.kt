@@ -23,7 +23,10 @@ import com.evantom.presentation.EventsViewModel
 import com.evantom.session.SessionStore
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +61,22 @@ val dataModule = module {
             expectSuccess = true
             install(ContentNegotiation) {
                 json()
+            }
+            // Explicit timeout policy — replaces cross-platform engine-default
+            // differences (OkHttp vs NSURLSession) with one behavior; see
+            // AGENT.md gotcha #15.
+            install(HttpTimeout) {
+                requestTimeoutMillis = 15_000
+                connectTimeoutMillis = 10_000
+            }
+            // Logging plugin: request/response metadata only (level INFO —
+            // bodies are never logged, so credentials stay out of the log);
+            // a no-op while the fake demo backend is active (it must not
+            // spam logcat). See AGENT.md gotcha #15.
+            if (!BackendConfig.useFakeBackend) {
+                install(Logging) {
+                    level = LogLevel.INFO
+                }
             }
         }
     }

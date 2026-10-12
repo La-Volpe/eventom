@@ -6,6 +6,7 @@ import com.evantom.domain.usecase.FilterEventsUseCase
 import com.evantom.domain.usecase.ObserveEventsUseCase
 import com.evantom.domain.usecase.RefreshEventsUseCase
 import com.evantom.domain.usecase.ToggleEventSavedUseCase
+import com.evantom.core.UiObservation
 import kotlinx.coroutines.launch
 
 /**

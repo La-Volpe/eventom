@@ -22,6 +22,9 @@ private class FixedClock(private val frozen: Instant) : Clock {
     override fun now(): Instant = frozen
 }
 
+/** Timeout-shaped failure for the HttpTimeout-policy test hook (T2). */
+private class SimulatedReadTimeout : Exception("simulated read timeout")
+
 /** Always fails — exercises the sample-data fallback path. */
 private class FailingRemote : EventRemoteDataSource {
     override suspend fun fetchEvents(): List<Event> = throw IllegalStateException("offline")
@@ -76,6 +79,37 @@ class EventRepositoryImplTest {
 
         assertEquals(listOf(remoteEvent), result.getOrNull())
         assertEquals(listOf(remoteEvent), repository.observeEvents().first())
+    }
+
+    @Test
+    fun keepsPreviousStateWhenRemoteTimesOut() = runTest {
+        // First refresh succeeds; the second throws a timeout-shaped error.
+        // The repository must keep the prior list state (no blank screen, no
+        // sample-data overwrite) and surface the failure through the Result.
+        val priorEvent = Event(
+            id = 42,
+            title = "Prior state event",
+            summary = "",
+            category = EventCategory.THEATER,
+            startTime = seed + 1.hours,
+            city = "Old town",
+            venue = "Hall 9",
+        )
+        val repository = makeRepository(
+            ScriptedRemote(
+                listOf(
+                    Result.success(listOf(priorEvent)),
+                    Result.failure(SimulatedReadTimeout()),
+                )
+            )
+        )
+
+        assertTrue(repository.refresh().isSuccess)
+        val prior = repository.observeEvents().first()
+
+        val second = repository.refresh()
+        assertTrue(second.isFailure, "timeout-shaped failure must be surfaced")
+        assertEquals(prior, repository.observeEvents().first(), "previous state must be kept after a timeout")
     }
 
     @Test

@@ -104,5 +104,5 @@ The layout rule is simple: if something isn't UI, it belongs in `shared/`.
 The app modules render shared state and forward user actions back into the
 shared view models.
 
-AGENT.md records the conventions and the platform gotchas from building
+AGENTS.md records the conventions and the platform gotchas from building
 this — worth reading before changing code in the repo.

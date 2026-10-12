@@ -63,7 +63,7 @@ val dataModule = module {
             }
             // Explicit timeout policy — replaces cross-platform engine-default
             // differences (OkHttp vs NSURLSession) with one behavior; see
-            // AGENT.md gotcha #15.
+            // AGENTS.md gotcha #15.
             install(HttpTimeout) {
                 requestTimeoutMillis = 15_000
                 connectTimeoutMillis = 10_000
@@ -71,7 +71,7 @@ val dataModule = module {
             // Logging plugin: request/response metadata only (level INFO —
             // bodies are never logged, so credentials stay out of the log);
             // a no-op while the fake demo backend is active (it must not
-            // spam logcat). See AGENT.md gotcha #15.
+            // spam logcat). See AGENTS.md gotcha #15.
             if (!BackendConfig.useFakeBackend) {
                 install(Logging) {
                     level = LogLevel.INFO

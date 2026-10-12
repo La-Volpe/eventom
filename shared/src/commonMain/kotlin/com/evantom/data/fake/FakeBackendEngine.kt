@@ -81,7 +81,7 @@ private suspend fun MockRequestHandleScope.respondToLogin(
         return respondJsonError(HttpStatusCode.BadRequest, "malformed login request")
     }
     // Demo accounts ship with FakeApiPayloads (mirroring api/users.json),
-    // which store SHA-256 hex of the demo passwords (AGENT.md #18). The posted
+    // which store SHA-256 hex of the demo passwords (AGENTS.md #18). The posted
     // password is hashed for the comparison; its plaintext is never logged
     // and never stored.
     val account = json.decodeFromString<List<FakeUserAccount>>(FakeApiPayloads.USERS_JSON)

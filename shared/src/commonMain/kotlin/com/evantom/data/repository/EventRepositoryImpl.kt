@@ -14,7 +14,7 @@ import kotlin.time.Clock
 /**
  * Remote-first repository over a single [MutableStateFlow] — the hot source
  * of truth both UIs observe. Demo content has exactly one source (the API
- * fixtures served by the fake backend; AGENT.md gotcha #19): on refresh
+ * fixtures served by the fake backend; AGENTS.md gotcha #19): on refresh
  * failure the previously loaded list stays observable and the failure is
  * surfaced through the [Result] (the UI maps it to the offline banner) —
  * there is deliberately no bundled sample fallback.

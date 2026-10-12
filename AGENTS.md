@@ -1,4 +1,4 @@
-# AGENT.md — EvenTom
+# AGENTS.md — EvenTom
 
 Guide for AI agents (and humans) working in this repo: architecture, commands,
 and the platform gotchas already paid for. Read before changing anything.

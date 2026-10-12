@@ -2,11 +2,11 @@ import XCTest
 
 /**
  * Machine-run walkthrough of the IOS-2 flows (splash → login → events).
- * Encodes what the human walkthrough would do: the orchestrator's emulator
- * has no tap-injection tooling (no Simulator.app, no idb HID), so these
+ * Encodes what the human walkthrough would do: the scripted-emulator setup on
+ * this machine (no Simulator.app, no idb HID), so these
  * XCUITest functions ARE the walkthrough.
  *
- * Input strategy (found empirically — see DiagUITests): this toolchain's
+ * Input strategy (found empirically during early diagnostics): this toolchain's
  * element taps abort on AX snapshot re-resolution races, while FRAME READS
  * are reliable — so taps are performed at raw screen coordinates derived
  * from a fresh frame read, and typing goes through `app.typeText` on the

@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.eventom.domain.model.EventCategory
 import com.eventom.presentation.EventsUiState
+import com.eventom.strings.Strings
 import java.time.Instant as JavaInstant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -45,6 +46,7 @@ private val eventTimeFormatter: DateTimeFormatter =
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventsScreen(
+    strings: Strings,
     viewState: EventsUiState,
     onSelect: (EventCategory?) -> Unit = {},
     onToggleSaved: (Long) -> Unit = {},
@@ -73,21 +75,21 @@ fun EventsScreen(
             when {
                 headerUser != null -> {
                     Text(
-                        "Hi, $headerUser",
+                        strings.eventsGreeting(name = headerUser),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     TextButton(onClick = onSignOut) {
-                        Text("Sign out", style = MaterialTheme.typography.labelSmall)
+                        Text(strings.signOutChip(), style = MaterialTheme.typography.labelSmall)
                     }
                 }
 
-                else -> TextButton(onClick = onSignIn) { Text("Sign in") }
+                else -> TextButton(onClick = onSignIn) { Text(strings.signInChip()) }
             }
             if (viewState.isRefreshing) {
                 CircularProgressIndicator(Modifier.height(20.dp).padding(start = 8.dp))
             } else {
-                TextButton(onClick = onRefresh) { Text("Refresh") }
+                TextButton(onClick = onRefresh) { Text(strings.refreshLabel()) }
             }
         }
 
@@ -106,13 +108,13 @@ fun EventsScreen(
             FilterChip(
                 selected = viewState.selectedCategory == null,
                 onClick = { onSelect(null) },
-                label = { Text("All") },
+                label = { Text(strings.allChip()) },
             )
             viewState.categories.forEach { category ->
                 FilterChip(
                     selected = viewState.selectedCategory == category,
                     onClick = { onSelect(category) },
-                    label = { Text(categoryLabel(category)) },
+                    label = { Text(strings.category(category)) },
                 )
             }
         }
@@ -122,7 +124,7 @@ fun EventsScreen(
                 CircularProgressIndicator()
             }
             viewState.events.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Nothing here yet — hit Refresh")
+                Text(strings.emptyList())
             }
             else -> LazyColumn(
                 contentPadding = PaddingValues(16.dp),
@@ -137,6 +139,7 @@ fun EventsScreen(
                 items(viewState.events, key = { it.id }) { event ->
                     EventCard(
                         event = event,
+                        strings = strings,
                         onToggleSaved = { onToggleSaved(event.id) },
                         onOpen = { onOpenDetail(event.id) },
                     )
@@ -150,6 +153,7 @@ fun EventsScreen(
 @Composable
 private fun EventCard(
     event: com.eventom.domain.model.Event,
+    strings: Strings,
     onToggleSaved: () -> Unit,
     onOpen: () -> Unit,
 ) {
@@ -175,10 +179,10 @@ private fun EventCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(categoryLabel(event.category), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(strings.category(event.category), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.weight(1f))
                     TextButton(onClick = onToggleSaved) {
-                        Text(if (event.isSaved) "★ Saved" else "☆ Save")
+                        Text(if (event.isSaved) strings.savedLabel() else strings.saveLabel())
                     }
                 }
                 Text(event.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

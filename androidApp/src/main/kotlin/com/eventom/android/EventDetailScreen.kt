@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.eventom.domain.model.EventCategory
 import com.eventom.presentation.EventDetailUiState
+import com.eventom.strings.Strings
 import java.time.Instant as JavaInstant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -87,6 +88,7 @@ internal fun formatPrice(price: Double): String = "%.2f €".format(price)
  */
 @Composable
 fun EventDetailScreen(
+    strings: Strings,
     state: EventDetailUiState,
     onBack: () -> Unit,
     onRetry: () -> Unit,
@@ -100,7 +102,7 @@ fun EventDetailScreen(
             if (state is EventDetailUiState.Success) {
                 Surface(shadowElevation = 8.dp) {
                     Button(
-                        onClick = { scope.launch { snackbarHostState.showSnackbar("Offline-Demo") } },
+                        onClick = { scope.launch { snackbarHostState.showSnackbar(strings.offlineDemoFeedback()) } },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = TicketBlue,
                             contentColor = Color.White,
@@ -112,7 +114,7 @@ fun EventDetailScreen(
                             .padding(horizontal = 16.dp, vertical = 12.dp)
                             .height(52.dp),
                     ) {
-                        Text("Tickets kaufen", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Text(strings.buyTicketsCta(), fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
                     }
                 }
             }
@@ -124,7 +126,7 @@ fun EventDetailScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         CircularProgressIndicator(color = TicketBlue)
                         Spacer(Modifier.height(12.dp))
-                        Text("Loading details…", style = MaterialTheme.typography.bodyMedium)
+                        Text(strings.loadingDetails(), style = MaterialTheme.typography.bodyMedium)
                     }
                 }
             }
@@ -140,11 +142,11 @@ fun EventDetailScreen(
                         Text(state.message, style = MaterialTheme.typography.bodyLarge)
                         Spacer(Modifier.height(16.dp))
                         Button(onClick = onRetry, colors = ButtonDefaults.buttonColors(containerColor = TicketBlue)) {
-                            Text("Try again")
+                            Text(strings.tryAgain())
                         }
                         Spacer(Modifier.height(8.dp))
                         OutlinedButton(onClick = onBack) {
-                            Text("Back to events")
+                            Text(strings.backToEvents())
                         }
                     }
                 }
@@ -155,6 +157,7 @@ fun EventDetailScreen(
                 // still extend under the status bar (no top inset used).
                 EventDetailContent(
                     state = state,
+                    strings = strings,
                     onBack = onBack,
                     bottomPadding = scaffoldPadding.calculateBottomPadding(),
                 )
@@ -165,6 +168,7 @@ fun EventDetailScreen(
 @Composable
 private fun EventDetailContent(
     state: EventDetailUiState.Success,
+    strings: Strings,
     onBack: () -> Unit,
     bottomPadding: Dp,
 ) {
@@ -220,7 +224,7 @@ private fun EventDetailContent(
                     .statusBarsPadding()
                     .padding(start = 12.dp, top = 4.dp)
                     .clickable(onClick = onBack)
-                    .semantics { contentDescription = "Back" },
+                    .semantics { contentDescription = strings.backLabel() },
             ) {
                 Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                     Text(
@@ -242,7 +246,7 @@ private fun EventDetailContent(
                     .padding(16.dp),
             ) {
                 Text(
-                    categoryLabel(event.category),
+                    strings.category(event.category),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White,
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
@@ -280,21 +284,21 @@ private fun EventDetailContent(
                 Spacer(Modifier.height(16.dp))
             }
 
-            SectionHeading("About this event")
+            SectionHeading(strings.aboutTitle())
             Text(detail.longSummary, style = MaterialTheme.typography.bodyMedium)
             Spacer(Modifier.height(16.dp))
 
             if (detail.lineup.isNotEmpty()) {
-                SectionHeading("Line-up")
+                SectionHeading(strings.lineupTitle())
                 detail.lineup.forEach { act ->
                     Text("•  $act", style = MaterialTheme.typography.bodyMedium)
                 }
                 Spacer(Modifier.height(16.dp))
             }
 
-            SectionHeading("Info")
+            SectionHeading(strings.infoTitle())
             if (detail.doorsTime.isNotBlank()) {
-                Text("Doors: ${detail.doorsTime}", style = MaterialTheme.typography.bodyMedium)
+                Text(strings.doorsLabel(time = detail.doorsTime), style = MaterialTheme.typography.bodyMedium)
             }
             if (detail.ageInfo.isNotBlank()) {
                 Text(detail.ageInfo, style = MaterialTheme.typography.bodyMedium)
@@ -302,7 +306,7 @@ private fun EventDetailContent(
             Spacer(Modifier.height(16.dp))
 
             if (detail.ticketCategories.isNotEmpty()) {
-                SectionHeading("Ticket categories")
+                SectionHeading(strings.ticketCategoriesTitle())
                 detail.ticketCategories.forEach { ticket ->
                     Row(
                         Modifier

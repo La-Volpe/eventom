@@ -2,6 +2,8 @@ package com.eventom.presentation
 
 import com.eventom.data.fake.fakeBackendEngine
 import com.eventom.domain.repository.EventDetailRemoteDataSource
+import com.eventom.language.LanguageSetting
+import com.eventom.language.MemoryLanguageStore
 import com.eventom.data.remote.KtorEventDetailRemoteDataSource
 import com.eventom.domain.model.Event
 import com.eventom.domain.model.EventCategory
@@ -89,6 +91,10 @@ class EventDetailViewModelTest {
         val viewModel = EventDetailViewModel(
             fetchDetail = FetchEventDetailUseCase(detailSource),
             repository = repository,
+            languageSetting = LanguageSetting(
+                store = MemoryLanguageStore(),
+                mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
+            ),
             mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         )
         return viewModel to repository

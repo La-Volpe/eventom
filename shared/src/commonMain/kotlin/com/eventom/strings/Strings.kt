@@ -61,6 +61,11 @@ interface Strings {
     fun aboutBoilerplateTitle(): String
     fun aboutBoilerplateBody(): String
 
+    // bottom-bar tab labels (both platforms render these identically today,
+    // so DE keeps the shipped bytes)
+    fun eventsTabLabel(): String
+    fun aboutTabLabel(): String
+
     // settings (task 2 wires the UI)
     fun settingsTitle(): String
     fun languageTitle(): String
@@ -112,6 +117,8 @@ object StringsDe : Strings {
     override fun aboutBoilerplateBody(): String =
         "All logic lives in the shared Kotlin module: domain, data (Ktor), view models and Koin wiring. " +
             "Both apps only render shared state natively."
+    override fun eventsTabLabel(): String = "Events"
+    override fun aboutTabLabel(): String = "About"
     override fun settingsTitle(): String = "Einstellungen"
     override fun languageTitle(): String = "Sprache"
     override fun languageSystemDefault(): String = "Systemstandard"
@@ -173,6 +180,8 @@ object StringsEn : Strings {
     override fun aboutBoilerplateBody(): String =
         "All logic lives in the shared Kotlin module: domain, data (Ktor), view models and Koin wiring. " +
             "Both apps only render shared state natively."
+    override fun eventsTabLabel(): String = "Events"
+    override fun aboutTabLabel(): String = "About"
     override fun settingsTitle(): String = "Settings"
     override fun languageTitle(): String = "Language"
     override fun languageSystemDefault(): String = "System default"

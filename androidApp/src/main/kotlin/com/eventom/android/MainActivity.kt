@@ -23,13 +23,22 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.eventom.di.SharedKoin
+import com.eventom.language.AppLanguage
 import com.eventom.presentation.AuthUiState
 import com.eventom.presentation.EventDetailUiState
+import com.eventom.strings.Strings
+import com.eventom.strings.strings
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Bilingual 2/4 UI-test hook: machine tests pass UITEST_LANG through
+        // launch-intent extras; it wins over the persisted choice and the
+        // device locale (LanguageSetting seeding rule, task 1).
+        intent.getStringExtra("UITEST_LANG")?.let { code ->
+            SharedKoin.languageSetting().setTestOverride(code)
+        }
         setContent {
             EvenTomTheme {
                 EvenTomApp()
@@ -40,8 +49,16 @@ class MainActivity : ComponentActivity() {
 
 /**
  * Root composition: Compose Navigation (plan T18, D4) with typed routes:
- * `splash` → `login` | (`events` + `about` tabs) → `detail/{eventId}`.
- * The bottom bar remains and switches tab destinations nav-driven.
+ * `splash` → `login` | (`events` + `settings` + `about` tabs) → `detail/{eventId}`.
+ *
+ * Language state (bilingual 2/4): the effective language is collected ONCE
+ * at the root; `strings(effective)` resolves the shared string table per
+ * composition and is passed DOWN to every screen (state-hoisting style —
+ * screens never reach into Koin for language/strings).
+ *
+ * Bottom-bar pick: Events | Settings | About — Settings sits second, one tap
+ * from either neighbor, which made the language switch reachable from both
+ * content tabs identically during the machine walkthrough.
  *
  * State hoisting per destination: screens keep taking state + callbacks;
  * the shared view models stay Koin singletons resolved once per destination
@@ -55,13 +72,17 @@ fun EvenTomApp() {
     val authViewModel = remember { SharedKoin.authViewModel() }
     val detailViewModel = remember { SharedKoin.eventDetailViewModel() }
     val session = remember { SharedKoin.sessionStore() }
+    val languageSetting = remember { SharedKoin.languageSetting() }
     val eventsState = eventsViewModel.state.collectAsStateWithLifecycle().value
+    val effective by languageSetting.effective.collectAsStateWithLifecycle()
+    val strings = remember(effective) { strings(effective) }
 
     Scaffold(
         bottomBar = {
             RouteBottomBar(
                 navigationController = navigationController,
-                visible = currentRouteIs(navigationController, "events", "about"),
+                strings = strings,
+                visible = currentRouteIs(navigationController, "events", "settings", "about"),
             )
         },
     ) { innerPadding ->
@@ -76,6 +97,7 @@ fun EvenTomApp() {
         ) {
             composable("splash") {
                 SplashScreen(
+                    strings = strings,
                     onSplashFinished = {
                         val target = if (session.isSignedIn) "events" else "login"
                         navigationController.navigate(target) { popUpTo("splash") { inclusive = true } }
@@ -93,6 +115,7 @@ fun EvenTomApp() {
                     }
                 }
                 LoginScreen(
+                    strings = strings,
                     authState = authState,
                     onSignIn = { email, password -> authViewModel.signIn(email, password) },
                     onBack = {
@@ -105,6 +128,7 @@ fun EvenTomApp() {
             }
             composable("events") {
                 EventsScreen(
+                    strings = strings,
                     viewState = eventsState,
                     onSelect = { eventsViewModel.select(it) },
                     onToggleSaved = { eventsViewModel.toggleSaved(it) },
@@ -119,8 +143,16 @@ fun EvenTomApp() {
                     },
                 )
             }
+            composable("settings") {
+                val persisted = languageSetting.persistedChoice.collectAsStateWithLifecycle().value
+                SettingsScreen(
+                    strings = strings,
+                    persisted = persisted,
+                    onChoose = { languageSetting.choose(it) },
+                )
+            }
             composable("about") {
-                AboutScreen()
+                AboutScreen(strings = strings)
             }
             composable(
                 route = "detail/{eventId}",
@@ -141,6 +173,7 @@ fun EvenTomApp() {
                     }
                 }
                 EventDetailScreen(
+                    strings = strings,
                     state = detailState,
                     onBack = {
                         detailViewModel.reset()
@@ -160,7 +193,7 @@ private fun currentRouteIs(controller: NavHostController, vararg routes: String)
 }
 
 @Composable
-private fun RouteBottomBar(navigationController: NavHostController, visible: Boolean) {
+private fun RouteBottomBar(navigationController: NavHostController, strings: Strings, visible: Boolean) {
     if (!visible) return
     NavigationBar {
         NavigationBarItem(
@@ -172,7 +205,19 @@ private fun RouteBottomBar(navigationController: NavHostController, visible: Boo
                     restoreState = true
                 }
             },
-            label = { Text("Events") },
+            label = { Text(strings.eventsTabLabel()) },
+            icon = {},
+        )
+        NavigationBarItem(
+            selected = currentRouteIs(navigationController, "settings"),
+            onClick = {
+                navigationController.navigate("settings") {
+                    popUpTo(navigationController.graph.findStartDestination().id) { saveState = true }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            },
+            label = { Text(strings.settingsTitle()) },
             icon = {},
         )
         NavigationBarItem(
@@ -184,7 +229,7 @@ private fun RouteBottomBar(navigationController: NavHostController, visible: Boo
                     restoreState = true
                 }
             },
-            label = { Text("About") },
+            label = { Text(strings.aboutTabLabel()) },
             icon = {},
         )
     }

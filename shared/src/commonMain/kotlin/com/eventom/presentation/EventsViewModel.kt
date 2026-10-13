@@ -7,6 +7,8 @@ import com.eventom.domain.usecase.ObserveEventsUseCase
 import com.eventom.domain.usecase.RefreshEventsUseCase
 import com.eventom.domain.usecase.ToggleEventSavedUseCase
 import com.eventom.core.UiObservation
+import com.eventom.language.LanguageSetting
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -37,9 +39,15 @@ class EventsViewModel(
     private val refreshEvents: RefreshEventsUseCase,
     private val toggleEventSaved: ToggleEventSavedUseCase,
     private val filterEvents: FilterEventsUseCase,
-) : BaseViewModel<EventsUiState>(initialState = EventsUiState.initial()) {
+    private val languageSetting: LanguageSetting,
+    // Optional scope injection (Tests inject; production resolves Main — gotcha #9).
+    mainScope: CoroutineScope? = null,
+) : BaseViewModel<EventsUiState>(initialState = EventsUiState.initial(), mainScope = mainScope) {
 
     private var allEvents: List<Event> = emptyList()
+
+    /** Language the currently rendered payload family was fetched with. */
+    private var languageOnLastRefresh = languageSetting.current
 
     /**
      * Swift-facing observation: every state change is delivered to
@@ -55,7 +63,20 @@ class EventsViewModel(
                 updateState { it.copy(isLoading = false, events = filterEvents(events, it.selectedCategory)) }
             }
         }
-        // 2) Kick off the first network fetch (falls back to sample data).
+        // 2) Language re-render (bilingual 2/4): an effective change re-fetches
+        // through the repository — the data source resolves Accept-Language
+        // from [languageSetting.current] per request, so the next refresh
+        // carries the new payload family; saved flags survive (same ids).
+        // The first (current) emission is skipped: init already refreshed.
+        launch {
+            languageSetting.effective.collect { language ->
+                if (language != languageOnLastRefresh) {
+                    languageOnLastRefresh = language
+                    refresh(silent = true)
+                }
+            }
+        }
+        // 3) Kick off the first network fetch (falls back to sample data).
         refresh(silent = true)
     }
 
@@ -81,7 +102,10 @@ class EventsViewModel(
                 val failure = outcome.exceptionOrNull()
                 // D1: no sample fallback — the previously loaded list stays on
                 // screen, so the banner must not claim "sample events".
-                current.copy(isRefreshing = false, message = failure?.let { "Offline — showing your last loaded events" })
+                current.copy(
+                    isRefreshing = false,
+                    message = failure?.let { languageSetting.strings().offlineBanner() },
+                )
             }
         }
     }

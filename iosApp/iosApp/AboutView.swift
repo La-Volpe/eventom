@@ -5,10 +5,13 @@ import Shared
 /// expect/actual mechanism — proof the shared module knows which platform
 /// it is running on.
 struct AboutView: View {
+    let strings: Strings
+
     private let info: PlatformInfo
     private let sharedVersion: String
 
-    init() {
+    init(strings: Strings) {
+        self.strings = strings
         self.info = Platform.shared.info()
         self.sharedVersion = SharedVersion.shared.VERSION
     }
@@ -16,18 +19,19 @@ struct AboutView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // "EvenTom" stays a brand wordmark; never translated.
                 Section("EvenTom") {
-                    LabeledContent("Shared Kotlin", value: sharedVersion)
-                    LabeledContent("Running on", value: "\(info.osName) \(info.osVersion)")
-                    LabeledContent("Device", value: info.deviceModel)
+                    LabeledContent(strings.aboutSharedKotlin(), value: sharedVersion)
+                    LabeledContent(strings.aboutRunningOn(), value: "\(info.osName) \(info.osVersion)")
+                    LabeledContent(strings.aboutDevice(), value: info.deviceModel)
                 }
-                Section("Boilerplate layout") {
-                    Text("All logic lives in the shared Kotlin module: domain, data (Ktor), view models and Koin wiring. Both apps only render shared state natively.")
+                Section(strings.aboutBoilerplateTitle()) {
+                    Text(strings.aboutBoilerplateBody())
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("About")
+            .navigationTitle(strings.aboutHeading())
         }
     }
 }

@@ -31,6 +31,8 @@ final class AuthBridge: ObservableObject {
 /// Mock login (M2→IOS-2), Eventim look. Success routing lives in the root
 /// composition; this view only reports via [onSuccess]/[onBack].
 struct LoginView: View {
+    let strings: Strings
+
     @StateObject private var authBridge = AuthBridge()
 
     @State private var email = ""
@@ -47,7 +49,7 @@ struct LoginView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Button("Back") { onBack() }
+                Button(strings.backLabel()) { onBack() }
                     .buttonStyle(.bordered)
                     .disabled(isLoading)
                 Spacer()
@@ -61,14 +63,14 @@ struct LoginView: View {
 
                     EvenTomWordmark()
                 .frame(maxWidth: .infinity, alignment: .center)
-            Text("Sign in to see your events")
+            Text(strings.loginTitle())
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
 
             Spacer().frame(height: 32)
 
-            TextField("E-mail", text: $email)
+            TextField(strings.emailLabel(), text: $email)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.emailAddress)
                 .autocorrectionDisabled()
@@ -81,7 +83,7 @@ struct LoginView: View {
 
             Spacer().frame(height: 12)
 
-            SecureField("Password", text: $password)
+            SecureField(strings.passwordLabel(), text: $password)
                 .padding(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14)
@@ -106,7 +108,7 @@ struct LoginView: View {
                         ProgressView()
                             .tint(.white)
                     } else {
-                        Text("Sign in")
+                        Text(strings.signInCta())
                             .fontWeight(.semibold)
                     }
                 }
@@ -118,7 +120,7 @@ struct LoginView: View {
             .disabled(isLoading || email.trimmingCharacters(in: .whitespaces).isEmpty || password.isEmpty)
 
                     Spacer().frame(height: 14)
-                    Text("Demo account: demo@eventom.dev · demo1234")
+                    Text(strings.demoHint(name: "demo@eventom.dev", password: "demo1234"))
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -144,5 +146,5 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView(onSuccess: {}, onBack: {})
+    LoginView(strings: StringsDe.shared, onSuccess: {}, onBack: {})
 }

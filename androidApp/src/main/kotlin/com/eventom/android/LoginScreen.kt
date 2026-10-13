@@ -37,9 +37,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.eventom.presentation.AuthUiState
+import com.eventom.strings.Strings
+import com.eventom.strings.StringsDe
 
 /** Field/button corner radius shared by the login UI. */
 private val LoginFieldShape = RoundedCornerShape(14.dp)
+
+/** Demo credentials rendered by the login hint (single source, M2). */
+internal const val DEMO_EMAIL = "demo@eventom.dev"
+internal const val DEMO_PASSWORD = "demo1234"
 
 /**
  * Mock login (M2), Eventim look: bright background, ticket-blue accents,
@@ -49,6 +55,7 @@ private val LoginFieldShape = RoundedCornerShape(14.dp)
  */
 @Composable
 fun LoginScreen(
+    strings: Strings,
     authState: AuthUiState,
     onSignIn: (email: String, password: String) -> Unit,
     onBack: () -> Unit,
@@ -79,7 +86,7 @@ fun LoginScreen(
                 enabled = !isLoading,
                 shape = RoundedCornerShape(10.dp),
             ) {
-                Text("Back")
+                Text(strings.backLabel())
             }
         }
 
@@ -89,7 +96,7 @@ fun LoginScreen(
         EvenTomWordmark()
         Spacer(Modifier.height(6.dp))
         Text(
-            "Sign in to see your events",
+            strings.loginTitle(),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -99,7 +106,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("E-mail") },
+            label = { Text(strings.emailLabel()) },
             singleLine = true,
             enabled = !isLoading,
             shape = LoginFieldShape,
@@ -115,7 +122,7 @@ fun LoginScreen(
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Password") },
+            label = { Text(strings.passwordLabel()) },
             singleLine = true,
             enabled = !isLoading,
             shape = LoginFieldShape,
@@ -165,14 +172,14 @@ fun LoginScreen(
                     color = Color.White,
                 )
             } else {
-                Text("Sign in", fontWeight = FontWeight.SemiBold)
+                Text(strings.signInCta(), fontWeight = FontWeight.SemiBold)
             }
         }
 
         // Demo-credential hint so the mock backend is easy to try.
         Spacer(Modifier.height(14.dp))
         Text(
-            "Demo account: demo@eventom.dev · demo1234",
+            strings.demoHint(name = DEMO_EMAIL, password = DEMO_PASSWORD),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,

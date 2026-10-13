@@ -65,7 +65,14 @@ final class SessionBridge: ObservableObject {
     }
 }
 
+
 struct EventsView: View {
+    let strings: Strings
+    // Language re-render hook (bilingual 2/4, B5): the root-owned bridge
+    // triggers a refresh on effective language change — the payload family
+    // the visible tab shows follows the new Accept-Language, saved flags
+    // carry over through the repository.
+    let languageBridge: LanguageBridge
     let onSignIn: () -> Void
     let onSignOut: () -> Void
     var onOpenDetail: (Int64) -> Void = { _ in }
@@ -83,6 +90,11 @@ struct EventsView: View {
         .onAppear {
             bridge.startObserving()
             sessionBridge.startObserving()
+            languageBridge.startObserving()
+            // B5: language change → refresh falls out of the shared bridge.
+            languageBridge.onEffectiveChanged = { [weak bridge] _ in
+                bridge?.viewModel.refresh()
+            }
         }
         .onDisappear {
             bridge.stopObserving()
@@ -98,17 +110,17 @@ struct EventsView: View {
             EvenTomWordmark(compact: true)
             Spacer()
             if let userName = sessionBridge.userName {
-                Text("Hi, \(userName)")
+                Text(strings.eventsGreeting(name: userName))
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(EvenTomColors.ticketBlue)
-                Button("Sign out") {
+                Button(strings.signOutChip()) {
                     sessionBridge.signOut()
                     onSignOut()
                 }
                 .font(.footnote)
                 .buttonStyle(.plain)
             } else {
-                Button("Sign in") { onSignIn() }
+                Button(strings.signInChip()) { onSignIn() }
                     .font(.footnote)
                     .buttonStyle(.plain)
             }
@@ -116,7 +128,7 @@ struct EventsView: View {
                 ProgressView()
                     .frame(height: 20)
             } else {
-                Button("Refresh") { bridge.viewModel.refresh() }
+                Button(strings.refreshLabel()) { bridge.viewModel.refresh() }
                     .font(.footnote)
                     .buttonStyle(.plain)
             }
@@ -143,11 +155,11 @@ struct EventsView: View {
     private func filterChips(state: EventsUiState) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                chip(title: "All", selected: state.selectedCategory == nil) {
+                chip(title: strings.allChip(), selected: state.selectedCategory == nil) {
                     bridge.viewModel.select(category: nil)
                 }
                 ForEach(state.categories, id: \.name) { category in
-                    chip(title: categoryDisplayName(category), selected: state.selectedCategory == category) {
+                    chip(title: strings.category(category: category), selected: state.selectedCategory == category) {
                         bridge.viewModel.select(category: category)
                     }
                 }
@@ -179,7 +191,7 @@ struct EventsView: View {
             Spacer()
         } else if state.events.isEmpty {
             Spacer()
-            Text("Nothing here yet — hit Refresh")
+            Text(strings.emptyList())
                 .foregroundStyle(.secondary)
             Spacer()
         } else {
@@ -189,6 +201,7 @@ struct EventsView: View {
                     ForEach(state.events, id: \.id) { event in
                         EventCard(
                             event: event,
+                            strings: strings,
                             onToggleSaved: { bridge.viewModel.toggleSaved(id: event.id) },
                             onOpen: { onOpenDetail(event.id) },
                         )
@@ -204,6 +217,7 @@ struct EventsView: View {
 
 private struct EventCard: View {
     let event: Event
+    let strings: Strings
     let onToggleSaved: () -> Void
     let onOpen: () -> Void
 
@@ -236,12 +250,12 @@ private struct EventCard: View {
                 .accessibilityIdentifier("posterThumb-\(event.id)")
             VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                Text(categoryDisplayName(event.category))
+                Text(strings.category(category: event.category))
                         .font(.caption2.weight(.semibold))
                         .foregroundStyle(EvenTomColors.ticketBlue)
                     Spacer()
                     Button(action: onToggleSaved) {
-                        Text(event.isSaved ? "★ Saved" : "☆ Save")
+                        Text(event.isSaved ? strings.savedLabel() : strings.saveLabel())
                             .font(.footnote)
                     }
                     .buttonStyle(.plain)
@@ -278,5 +292,11 @@ private struct EventCard: View {
 }
 
 #Preview {
-    EventsView(onSignIn: {}, onSignOut: {}, onOpenDetail: { _ in })
+    EventsView(
+        strings: StringsDe.shared,
+        languageBridge: LanguageBridge(),
+        onSignIn: {},
+        onSignOut: {},
+        onOpenDetail: { _ in },
+    )
 }

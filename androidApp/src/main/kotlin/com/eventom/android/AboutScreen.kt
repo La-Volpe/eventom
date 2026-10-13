@@ -15,10 +15,11 @@ import androidx.compose.ui.unit.dp
 import com.eventom.platform.PlatformInfo
 import com.eventom.platform.SharedVersion
 import com.eventom.platform.platformInfo
+import com.eventom.strings.Strings
 
 /** Second native screen, demonstrating expect/actual + shared constants. */
 @Composable
-fun AboutScreen(contentPadding: PaddingValues = PaddingValues(0.dp)) {
+fun AboutScreen(strings: Strings, contentPadding: PaddingValues = PaddingValues(0.dp)) {
     val info: PlatformInfo = platformInfo()
 
     Column(
@@ -27,12 +28,12 @@ fun AboutScreen(contentPadding: PaddingValues = PaddingValues(0.dp)) {
             .padding(contentPadding)
             .padding(16.dp),
     ) {
-        Text("About", style = MaterialTheme.typography.headlineSmall)
+        Text(strings.aboutHeading(), style = MaterialTheme.typography.headlineSmall)
         Card(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
-                Text("EvenTom", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Text("Shared Kotlin ${SharedVersion.VERSION}", style = MaterialTheme.typography.bodyMedium)
-                Text("Running on: ${info.osName} ${info.osVersion} (${info.deviceModel})", style = MaterialTheme.typography.bodyMedium)
+                Text("EvenTom", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold) // wordmark, never translated
+                Text("${strings.aboutSharedKotlin()} ${SharedVersion.VERSION}", style = MaterialTheme.typography.bodyMedium)
+                Text("${strings.aboutRunningOn()}: ${info.osName} ${info.osVersion} (${info.deviceModel})", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }

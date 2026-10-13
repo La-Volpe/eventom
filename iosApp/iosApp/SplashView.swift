@@ -6,6 +6,7 @@ import Shared
 /// Holds ~1.5s, then [onDone] routes: signed in → Events, else → Login
 /// (SharedKoin's SessionStore is in memory, so a cold start lands on Login).
 struct SplashView: View {
+    let strings: Strings
     let onDone: () -> Void
 
     @State private var accentWidth: CGFloat = 28
@@ -27,7 +28,7 @@ struct SplashView: View {
                     .fill(EvenTomColors.ticketBlue)
                     .frame(width: accentWidth, height: 3)
                     .clipShape(Capsule())
-                Text("Tickets für Live-Entertainment")
+                Text(strings.splashTagline())
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -43,5 +44,5 @@ struct SplashView: View {
 }
 
 #Preview {
-    SplashView(onDone: {})
+    SplashView(strings: StringsDe.shared, onDone: {})
 }

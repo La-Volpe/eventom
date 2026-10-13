@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
  */
 class LanguageSetting(
     store: LanguageStore = defaultLanguageStore(),
-    private val testOverride: (() -> String?)? = null,
+    testOverride: (() -> String?)? = null,
     // Injectable scope (house gotcha #9); production leaves the Main default.
     mainScope: CoroutineScope? = null,
 ) {
@@ -48,12 +48,27 @@ class LanguageSetting(
         if (code.take(2).lowercase() == "de") EffectiveLanguage.DE else EffectiveLanguage.EN
 
     private fun resolve(persisted: AppLanguage): EffectiveLanguage {
-        testOverride?.invoke()?.let { return mapDeviceCode(it) }
+        testOverrideFlow.value?.let { return mapDeviceCode(it) }
         return when (persisted) {
             AppLanguage.DE -> EffectiveLanguage.DE
             AppLanguage.EN -> EffectiveLanguage.EN
             AppLanguage.SYSTEM -> mapDeviceCode(deviceLanguageCode())
         }
+    }
+
+    // UI-test hook state (task 2): apps seed it from their runner channels
+    // (Android: launch-intent extra; iOS: defaults/env pass-through). It wins
+    // over the persisted choice and the device locale while set.
+    private val testOverrideFlow = MutableStateFlow(testOverride?.invoke())
+
+    /**
+     * Sets/clears the test language override ("de"/"en"/other) at runtime.
+     * Changes re-resolve [effective] immediately — same seeding rule as the
+     * constructor hook.
+     */
+    fun setTestOverride(code: String?) {
+        testOverrideFlow.value = code
+        effectiveFlow.value = resolve(persistFlow.value)
     }
 
     private val persistFlow = MutableStateFlow(parseStored(store.readStoredLanguage()))

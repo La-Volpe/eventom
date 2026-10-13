@@ -35,13 +35,15 @@ final class EventDetailBridge: ObservableObject {
 /// artwork shows no title).
 struct EventDetailView: View {
     let eventId: Int64
+    let strings: Strings
     let onBack: () -> Void
 
     @StateObject private var bridge: EventDetailBridge
     @State private var showOfflineDemo = false
 
-    init(eventId: Int64, onBack: @escaping () -> Void) {
+    init(eventId: Int64, strings: Strings, onBack: @escaping () -> Void) {
         self.eventId = eventId
+        self.strings = strings
         self.onBack = onBack
         _bridge = StateObject(wrappedValue: EventDetailBridge())
     }
@@ -77,7 +79,7 @@ struct EventDetailView: View {
         // (Android uses a Snackbar with the same string), auto-dismissing.
         .overlay(alignment: .bottom) {
             if showOfflineDemo {
-                Text("Offline-Demo")
+                Text(strings.offlineDemoFeedback())
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
@@ -108,7 +110,7 @@ struct EventDetailView: View {
                     withAnimation(.easeOut(duration: 0.2)) { showOfflineDemo = false }
                 }
             }) {
-                Text("Tickets kaufen")
+                Text(strings.buyTicketsCta())
                     .fontWeight(.semibold)
                     .frame(maxWidth: .infinity, minHeight: 52)
             }
@@ -128,7 +130,7 @@ struct EventDetailView: View {
     }
 
     private var offlineDemoBanner: some View {
-        Text("Offline-Demo")
+        Text(strings.offlineDemoFeedback())
             .font(.footnote.weight(.semibold))
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -149,7 +151,7 @@ struct EventDetailView: View {
                 ProgressView()
                     .tint(EvenTomColors.ticketBlue)
                     .scaleEffect(1.4)
-                Text("Loading details…")
+                Text(strings.loadingDetails())
                     .font(.subheadline)
                 Spacer()
             }
@@ -160,12 +162,12 @@ struct EventDetailView: View {
                 Text(error.message)
                     .font(.body)
                     .multilineTextAlignment(.center)
-                Button("Try again") {
+                Button(strings.tryAgain()) {
                     bridge.viewModel.load(eventId: eventId)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(EvenTomColors.ticketBlue)
-                Button("Back to events") { onBack() }
+                Button(strings.backToEvents()) { onBack() }
                     .buttonStyle(.bordered)
                 Spacer()
             }
@@ -175,6 +177,7 @@ struct EventDetailView: View {
             EventDetailContent(
                 event: success.event,
                 detail: success.detail,
+                strings: strings,
                 onBack: onBack,
             )
         }
@@ -186,6 +189,7 @@ struct EventDetailView: View {
 private struct EventDetailContent: View {
     let event: Event
     let detail: EventDetail
+    let strings: Strings
     let onBack: () -> Void
 
     private static let dateFormatter: DateFormatter = {
@@ -271,14 +275,14 @@ private struct EventDetailContent: View {
                     .frame(width: 44, height: 44)
                     .background(Color.black.opacity(0.35), in: Circle())
             }
-            .accessibilityLabel("Back")
+            .accessibilityLabel(strings.backLabel())
             .accessibilityIdentifier("detailBack")
             .padding(.leading, 12)
             .padding(.top, 4) // status-bar clearance via hero's bottom-leading alignment trick
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
             // Category accent chip (over the dark scrim's ground).
-            Text(categoryDisplayName(event.category))
+            Text(strings.category(category: event.category))
                 .font(.caption.weight(.semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
@@ -308,10 +312,10 @@ private struct EventDetailContent: View {
 
     private var info: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Info")
+            Text(strings.infoTitle())
                 .font(.headline)
             if !detail.doorsTime.isEmpty {
-                Text("Doors: \(detail.doorsTime)")
+                Text(strings.doorsLabel(time: detail.doorsTime))
                     .font(.subheadline)
             }
             if !detail.ageInfo.isEmpty {
@@ -324,7 +328,7 @@ private struct EventDetailContent: View {
 
     private var about: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("About this event")
+            Text(strings.aboutTitle())
                 .font(.headline)
             Text(detail.longSummary)
                 .font(.subheadline)
@@ -334,7 +338,7 @@ private struct EventDetailContent: View {
 
     private var lineup: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Line-up")
+            Text(strings.lineupTitle())
                 .font(.headline)
             ForEach(Array(detail.lineup.enumerated()), id: \.offset) { _, act in
                 Text("•  \(act)")
@@ -346,7 +350,7 @@ private struct EventDetailContent: View {
 
     private var ticketCategories: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Ticket categories")
+            Text(strings.ticketCategoriesTitle())
                 .font(.headline)
             ForEach(Array(detail.ticketCategories.enumerated()), id: \.offset) { _, ticket in
                 HStack {
@@ -367,5 +371,5 @@ private struct EventDetailContent: View {
 
 
 #Preview {
-    EventDetailView(eventId: 4, onBack: {})
+    EventDetailView(eventId: 4, strings: StringsDe.shared, onBack: {})
 }

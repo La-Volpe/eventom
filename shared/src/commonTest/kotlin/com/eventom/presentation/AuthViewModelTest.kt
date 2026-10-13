@@ -5,6 +5,8 @@ import com.eventom.data.remote.KtorAuthRemoteDataSource
 import com.eventom.data.fake.fakeBackendEngine
 import com.eventom.domain.model.AuthUser
 import com.eventom.domain.usecase.LoginUseCase
+import com.eventom.language.LanguageSetting
+import com.eventom.language.MemoryLanguageStore
 import com.eventom.session.SessionStore
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -56,6 +58,12 @@ class AuthViewModelTest {
         AuthViewModel(
             login = LoginUseCase(remote),
             session = session,
+            // Localized messages resolve against the EN table by default here;
+            // the failure strings assert their own bytes.
+            languageSetting = LanguageSetting(
+                store = MemoryLanguageStore(),
+                mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
+            ),
             mainScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         ) to session
 

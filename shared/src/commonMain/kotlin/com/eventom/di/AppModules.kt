@@ -117,10 +117,12 @@ val sessionModule = module {
 }
 
 val presentationModule = module {
-    single { EventsViewModel(get(), get(), get(), get()) }
-    single { AuthViewModel(get(), get()) }
+    // LanguageSetting is the last param of every VM: the message tables and
+    // (events) the language-change auto-refresh use it (bilingual 2/4).
+    single { EventsViewModel(get(), get(), get(), get(), get()) }
+    single { AuthViewModel(get(), get(), get()) }
     // Keyed on the expression type; the detail VM loads by id on demand.
-    single { EventDetailViewModel(get(), get()) }
+    single { EventDetailViewModel(get(), get(), get()) }
 }
 
 /** Everything the app needs, in one list — use with [startKoin] or Koin for apps. */
@@ -156,6 +158,8 @@ object SharedKoin {
     fun eventDetailViewModel(): EventDetailViewModel = resolve()
 
     fun sessionStore(): SessionStore = resolve()
+
+    fun languageSetting(): LanguageSetting = resolve()
 
     private inline fun <reified T : Any> resolve(): T = koinApplication?.koin?.get()
         ?: error("SharedKoin.start() has not been called yet")

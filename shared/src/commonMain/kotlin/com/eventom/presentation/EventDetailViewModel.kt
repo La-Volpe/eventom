@@ -7,6 +7,7 @@ import com.eventom.domain.usecase.FetchEventDetailUseCase
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
 import com.eventom.core.UiObservation
+import com.eventom.language.LanguageSetting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 
@@ -40,6 +41,7 @@ sealed class EventDetailUiState {
 class EventDetailViewModel(
     private val fetchDetail: FetchEventDetailUseCase,
     repository: EventRepository,
+    private val languageSetting: LanguageSetting,
     mainScope: CoroutineScope? = null,
 ) : BaseViewModel<EventDetailUiState>(initialState = EventDetailUiState.Idle, mainScope = mainScope) {
 
@@ -72,12 +74,16 @@ class EventDetailViewModel(
     /** Called when the detail screen is left, so the next visit starts fresh. */
     fun reset() = updateState { EventDetailUiState.Idle }
 
-    private val eventMissingMessage = "This event is no longer available"
+    private val eventMissingMessage: String
+        get() = languageSetting.strings().eventNoLongerAvailable()
 
-    private fun failureMessage(error: Throwable?): String = when {
-        error is ClientRequestException && error.response.status == HttpStatusCode.NotFound ->
-            eventMissingMessage
-        else ->
-            "Couldn't load details — check your connection and try again"
+    private fun failureMessage(error: Throwable?): String {
+        val strings = languageSetting.strings()
+        return when {
+            error is ClientRequestException && error.response.status == HttpStatusCode.NotFound ->
+                strings.eventNoLongerAvailable()
+            else ->
+                strings.detailGenericError()
+        }
     }
 }

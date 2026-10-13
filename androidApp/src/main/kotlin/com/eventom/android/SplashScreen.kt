@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.eventom.strings.Strings
 import kotlinx.coroutines.delay
 
 /** How long the branded splash holds before routing (M3 spec: 1.2–1.8s). */
@@ -31,7 +32,10 @@ private val SPLASH_HOLD = 1_500
  * else → Login).
  */
 @Composable
-fun SplashScreen(onSplashFinished: () -> Unit) {
+fun SplashScreen(
+    strings: Strings,
+    onSplashFinished: () -> Unit,
+) {
     // Accent line fades/extends in over the first beat of the hold.
     val accent = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -60,7 +64,7 @@ fun SplashScreen(onSplashFinished: () -> Unit) {
             )
             Spacer(Modifier.height(14.dp))
             Text(
-                "Tickets für Live-Entertainment",
+                strings.splashTagline(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

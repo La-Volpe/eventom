@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.eventom.di.SharedKoin
 import org.junit.Rule
 import org.junit.Test
 
@@ -42,6 +43,10 @@ class WalkthroughTest {
 
     @Test
     fun walkthroughSplashToEventsDetailAndBackToLogin() {
+        // Bilingual 2/4: pin the content language through the shared test
+        // hook — this walk asserts the byte-identical German QA set, while
+        // the emulator device locale is en-US (SYSTEM would seed EN).
+        SharedKoin.languageSetting().setTestOverride("de")
         // Splash strings — caught up front, inside the 1.5s window.
         compose.waitUntil(timeoutMillis = 3_000) {
             compose.onAllNodesWithText("EVENTOM").fetchSemanticsNodes().isNotEmpty() ||

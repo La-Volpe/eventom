@@ -6,6 +6,7 @@ import com.eventom.session.SessionStore
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.http.HttpStatusCode
 import com.eventom.core.UiObservation
+import com.eventom.language.LanguageSetting
 import kotlinx.coroutines.CoroutineScope
 
 /**
@@ -35,6 +36,8 @@ sealed class AuthUiState {
 class AuthViewModel(
     private val login: LoginUseCase,
     private val session: SessionStore,
+    // Message source for the localized login errors (bilingual 2/4).
+    private val languageSetting: LanguageSetting,
     // Tests inject a scope; production resolves the Main dispatcher (gotcha #9).
     mainScope: CoroutineScope? = null,
 ) : BaseViewModel<AuthUiState>(initialState = AuthUiState.Idle, mainScope = mainScope) {
@@ -65,10 +68,13 @@ class AuthViewModel(
     /** Called when the screen goes away so a re-entry starts fresh. */
     fun reset() = updateState { AuthUiState.Idle }
 
-    private fun failureMessage(error: Throwable?): String = when {
-        error is ClientRequestException && error.response.status == HttpStatusCode.Unauthorized ->
-            "Wrong e-mail or password"
-        else ->
-            "Sign in failed — check your connection and try again"
+    private fun failureMessage(error: Throwable?): String {
+        val strings = languageSetting.strings()
+        return when {
+            error is ClientRequestException && error.response.status == HttpStatusCode.Unauthorized ->
+                strings.loginWrongPassword()
+            else ->
+                strings.loginGenericError()
+        }
     }
 }

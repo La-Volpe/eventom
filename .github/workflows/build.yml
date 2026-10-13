@@ -142,14 +142,17 @@ jobs:
           mkdir -p .github/badges
           python3 - .github/badges/tests.json .github/badges/coverage.json <<'PY'
           import glob, json, re, sys
+          import xml.etree.ElementTree as ET
           files = glob.glob("junit/*.xml")
           total = sum(int(x) for f in files for x in re.findall(r'tests="([0-9]+)"', open(f, encoding="utf-8", errors="ignore").read()))
           cov = None
           for f in glob.glob("kover/*.xml"):
-              m = re.search(r'<counter type="LINE" missed="(\d+)" covered="(\d+)"', open(f).read())
-              if m:
-                  missed, covered = int(m.group(1)), int(m.group(2))
-                  cov = round(100 * covered / (covered + missed)) if covered + missed else 0
+              root = ET.parse(f).getroot()
+              x = root.find('counter[@type="LINE"]')  # direct child = module total, not a nested package counter
+              if x is None:
+                  continue
+              covered, missed = int(x.get("covered")), int(x.get("missed"))
+              cov = round(100 * covered / (covered + missed)) if covered + missed else 0
           json.dump({
               "schemaVersion": 1,
               "label": "tests",

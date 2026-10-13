@@ -9,6 +9,7 @@ plugins {
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kover)
+    alias(libs.plugins.ktlint)
 }
 
 // T17: measured coverage is the gate, not a number chase. Integration-only
@@ -82,4 +83,10 @@ kotlin {
             implementation(libs.koin.test)
         }
     }
+}
+
+// Style gate: baseline carries pre-existing findings (parity raw-string fixtures, use-case file naming)
+// so ktlintCheck only flags NEW violations. Refresh with `./gradlew :shared:ktlintBaseline`.
+ktlint {
+    baseline = rootProject.file("config/ktlint/baseline.xml")
 }

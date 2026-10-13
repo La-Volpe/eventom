@@ -29,6 +29,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Gradle setup
         uses: ./.github/actions/gradle-setup
+      - name: Style gate
+        run: ./gradlew :shared:ktlintCheck :androidApp:ktlintCheck
       - name: Run shared tests on the JVM
         run: ./gradlew :shared:testAndroidHostTest
       - name: Emit host test count

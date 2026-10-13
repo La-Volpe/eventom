@@ -8,6 +8,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ktlint)
 }
 
 android {
@@ -43,8 +44,13 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     debugImplementation(libs.compose.ui.tooling)
 
-    //.connected Android walkthrough (plan T13): Compose test APIs + runner.
+    // .connected Android walkthrough (plan T13): Compose test APIs + runner.
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.compose.ui.test.manifest)
+}
+
+// Style gate: same baseline-first policy as `shared` (see its comment).
+ktlint {
+    baseline = rootProject.file("config/ktlint/baseline.xml")
 }

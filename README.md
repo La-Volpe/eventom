@@ -17,12 +17,15 @@ the tests around it.
 What's hard here:
 
 - **One codebase, two UIs, tested twice.** The exact same strings get
-  asserted on Compose and SwiftUI, in both languages (`AGENTS.md` #24).
+  asserted on Compose and SwiftUI, in both languages (`AGENTS.md` #24:
+  [bilingual architecture](https://github.com/La-Volpe/eventom/blob/main/AGENTS.md#L259)).
 - **The backend is faked below content negotiation.** A Ktor `MockEngine`
   answers inside the real client pipeline, so serialization and error paths
-  run for real. Switching to a live backend is a config flag (#13, #22).
+  run for real. Switching to a live backend is a config flag (#13, #22:
+  [headers, timeouts, logging](https://github.com/La-Volpe/eventom/blob/main/AGENTS.md#L232)).
 - **113 tests, three targets, five CI jobs.** Per-language fixture families
-  are guarded by a parity test, and every push is gated (#19, #23).
+  are guarded by a parity test, and every push is gated (#19, #23:
+  [per-language content + the badge mechanism](https://github.com/La-Volpe/eventom/blob/main/AGENTS.md#L241)).
 
 | Android | iOS |
 |---|---|
@@ -86,15 +89,17 @@ There is no CocoaPods. The Xcode project's Run Script phase calls
 
 ## Testing
 
-- `shared/src/{commonTest,androidHostTest}`: 67 tests (34 on the JVM, 33 as
-  Kotlin/Native on the iOS simulator) covering the fake-backend pipeline, the
-  repository, the auth and detail view models, fixture parity, and the
-  no-fallback error paths.
+- `shared/src/{commonTest,androidHostTest}`: 113 tests (57 on the JVM, 56 as
+  Kotlin/Native on the iOS simulator) covering the fake-backend pipeline,
+  the repository, the auth and detail view models, fixture parity per
+  language, language switching, and the no-fallback error paths.
 - `androidApp/src/androidTest`: a single connected Compose walkthrough of
-  the full journey, with navigation route assertions along the way.
-- `iosApp/iosAppUITests`: a six-test XCUITest walkthrough covering splash,
+  the full journey — German-pinned, then through the in-app switch to
+  English and back — with navigation route assertions along the way.
+- `iosApp/iosAppUITests`: seven XCUITests across two suites covering splash,
   login form, the login journey (posters, save round trip, chip scrolling,
-  refresh), the wrong-password path, the detail journey, and sign-out.
+  refresh), the wrong-password path, the bilingual detail journey, sign-out,
+  and the language switch itself.
 
 ```bash
 xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp \

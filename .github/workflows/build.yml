@@ -41,6 +41,13 @@ jobs:
         with:
           name: test-reports
           path: "**/build/reports/tests/"
+      - name: Kover XML
+        run: ./gradlew :shared:koverXmlReport
+      - name: Upload Kover XML
+        uses: actions/upload-artifact@v4
+        with:
+          name: kover-xml
+          path: shared/build/reports/kover/report.xml
       - name: Upload JUnit XML (host)
         uses: actions/upload-artifact@v4
         with:
@@ -125,29 +132,46 @@ jobs:
           pattern: junit-*
           merge-multiple: true
           path: junit/
-      - name: Compute badge JSON
+      - name: Download Kover XML
+        uses: actions/download-artifact@v4
+        with:
+          name: kover-xml
+          path: kover/
+      - name: Compute badge JSONs
         run: |
           mkdir -p .github/badges
-          python3 - .github/badges/tests.json <<'PY'
+          python3 - .github/badges/tests.json .github/badges/coverage.json <<'PY'
           import glob, json, re, sys
           files = glob.glob("junit/*.xml")
           total = sum(int(x) for f in files for x in re.findall(r'tests="([0-9]+)"', open(f, encoding="utf-8", errors="ignore").read()))
+          cov = None
+          for f in glob.glob("kover/*.xml"):
+              m = re.search(r'<counter type="LINE" missed="(\d+)" covered="(\d+)"', open(f).read())
+              if m:
+                  missed, covered = int(m.group(1)), int(m.group(2))
+                  cov = round(100 * covered / (covered + missed)) if covered + missed else 0
           json.dump({
               "schemaVersion": 1,
               "label": "tests",
               "message": "{} passed".format(total),
               "color": "brightgreen",
           }, open(sys.argv[1], "w"))
-          print("badge: {} passed".format(total))
+          json.dump({
+              "schemaVersion": 1,
+              "label": "coverage",
+              "message": "{}%".format(cov if cov is not None else "n/a"),
+              "color": "green" if cov is not None and cov >= 60 else "orange" if cov is not None else "inactive",
+          }, open(sys.argv[2], "w"))
+          print("badge: {} passed; coverage {}".format(total, cov))
           PY
       - name: Commit badge when changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/badges/tests.json
-          if git diff --cached --quiet -- .github/badges/tests.json; then
+          git add .github/badges/tests.json .github/badges/coverage.json
+          if git diff --cached --quiet -- .github/badges/tests.json && git diff --cached --quiet -- .github/badges/coverage.json; then
             echo "no badge change"
           else
-            git commit -m "CI: update tests badge (auto)"
+            git commit -m "CI: update badges (auto)"
             git push origin main
           fi

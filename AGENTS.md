@@ -248,6 +248,13 @@ uncomment it there if an Intel Mac must build the project.
     file always reports "no change" (the badge stayed stale a full run
     because of exactly this). The README references the raw main-branch URL,
     so the badge is always the last green run's count.
+25. **Releases follow the tag, not the README.** `git tag v1.0.0 <sha> &&
+    git push origin v1.0.0` + `gh release create v1.0.0 --draft` — then
+    attach the `android-apk` artifact from the run that built that exact
+    SHA and publish. Do not attach artifacts from later runs: the release
+    binary must match the tag it claims. Coverage and tests badges live in
+    `.github/badges/*.json` and are refreshed by the CI `badge` job (see
+    #23) — never hand-edit them.
 
 24. **Bilingual architecture (locked decision 3: strings + language state
     live in shared).** `com.eventom.language`: `AppLanguage`

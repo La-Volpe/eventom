@@ -1,17 +1,28 @@
 # EvenTom
 
 [![tests](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FLa-Volpe%2Feventom%2Fmain%2F.github%2Fbadges%2Ftests.json)](https://github.com/La-Volpe/eventom/actions/workflows/build.yml)
+[![coverage](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2FLa-Volpe%2Feventom%2Fmain%2F.github%2Fbadges%2Fcoverage.json)](https://github.com/La-Volpe/eventom/actions/workflows/build.yml)
 
 A ticketing demo in the spirit of Eventim, built as a Kotlin Multiplatform
-project. One shared Kotlin module holds everything that isn't UI, and the
-two platform clients render fully natively — Jetpack Compose on Android,
-SwiftUI on iOS.
+project. One shared Kotlin module holds everything that isn't UI. The two
+platform clients render fully natively: Jetpack Compose on Android, SwiftUI
+on iOS.
 
-It is a demo, and it says so up front: the "backend" ships inside the app,
-the UI is bilingual (device language by default, settings switch German/
-English live), and almost nothing survives a relaunch — the language choice
-is the only thing that persists. What's real is the architecture and the
-test discipline around it.
+It is a demo, and it says so up front. The "backend" ships inside the app,
+the UI is bilingual (device language by default, with a live German/English
+switch in settings), and almost nothing survives a relaunch. The language
+choice is the only thing that persists. What is real is the architecture and
+the tests around it.
+
+What's hard here:
+
+- **One codebase, two UIs, tested twice.** The exact same strings get
+  asserted on Compose and SwiftUI, in both languages (`AGENTS.md` #24).
+- **The backend is faked below content negotiation.** A Ktor `MockEngine`
+  answers inside the real client pipeline, so serialization and error paths
+  run for real. Switching to a live backend is a config flag (#13, #22).
+- **113 tests, three targets, five CI jobs.** Per-language fixture families
+  are guarded by a parity test, and every push is gated (#19, #23).
 
 | Android | iOS |
 |---|---|
@@ -35,27 +46,26 @@ test discipline around it.
 ## The fake backend
 
 There is no server. A Ktor `MockEngine` sits where a real HTTP engine would
-go and answers from JSON fixtures, so request serialization, response
-headers, and DTO parsing all run through the genuine client pipeline:
+go and answers from JSON fixtures. Request serialization, response headers,
+and DTO parsing all run through the genuine client pipeline:
 
-- `GET /api/events` — event list (categories, prices, venues, image refs)
-- `GET /api/event-details/{id}` — per-event details, 404 for unknown ids
-- `POST /api/login` — `demo@eventom.dev` / `demo1234` works; anything else
-  gets a 401
+- `GET /api/events` returns the event list (categories, prices, venues, image refs)
+- `GET /api/event-details/{id}` returns per-event details, with a 404 for unknown ids
+- `POST /api/login` accepts `demo@eventom.dev` / `demo1234`; anything else gets a 401
 
 The fixtures live in `shared/src/commonMain/resources/api/`, mirrored as
-compiled-in strings and guarded by a parity test — the build fails if either
-copy drifts. Swapping in a real backend later is a config flag, not a
+compiled-in strings and guarded by a parity test. If either copy drifts, the
+build fails. Swapping in a real backend later is a config flag, not a
 rewrite.
 
-Why fake the engine boundary instead of stubbing the repository? Because a
-stub proves nothing: it skips exactly the layer where real apps break. Done
-this way, the network itself is the only pretend part.
+Why fake the engine boundary instead of stubbing the repository? A stub
+proves nothing, because it skips exactly the layer where real apps break.
+Done this way, the network itself is the only pretend part.
 
 ## Posters
 
 `tools/generate_posters.py` draws all twelve posters with Pillow and writes
-them for both platforms in a single run — Android `drawable-nodpi` and iOS
+them for both platforms in a single run: Android `drawable-nodpi` and iOS
 `Posters.xcassets`, each poster in two sizes (hero 1200×1500, thumbnail
 480×600). Rerunning the script reproduces the files byte for byte.
 
@@ -71,19 +81,19 @@ the iOS 26.5 simulator).
 open iosApp/iosApp.xcodeproj          # iOS, ⌘R
 ```
 
-There is no CocoaPods; the Xcode project's Run Script phase calls
+There is no CocoaPods. The Xcode project's Run Script phase calls
 `./gradlew :shared:embedAndSignAppleFrameworkForXcode`.
 
 ## Testing
 
-- `shared/src/{commonTest,androidHostTest}` — 67 tests (34 on the JVM, 33 as
+- `shared/src/{commonTest,androidHostTest}`: 67 tests (34 on the JVM, 33 as
   Kotlin/Native on the iOS simulator) covering the fake-backend pipeline, the
   repository, the auth and detail view models, fixture parity, and the
   no-fallback error paths.
-- `androidApp/src/androidTest` — a single connected Compose walkthrough of
+- `androidApp/src/androidTest`: a single connected Compose walkthrough of
   the full journey, with navigation route assertions along the way.
-- `iosApp/iosAppUITests` — a six-test XCUITest walkthrough: splash, login
-  form, the login journey (posters, save round trip, chip scrolling,
+- `iosApp/iosAppUITests`: a six-test XCUITest walkthrough covering splash,
+  login form, the login journey (posters, save round trip, chip scrolling,
   refresh), the wrong-password path, the detail journey, and sign-out.
 
 ```bash
@@ -106,16 +116,23 @@ iosApp/iosApp/             # SwiftUI sources + Posters.xcassets
 One rule shapes the layout: whatever isn't UI goes into `shared/`, and
 whatever isn't logic stays out of `shared/`.
 
+## How this was built
+
+Built with an AI-agent orchestrator that was governed like a team member.
+Specs and a plan were written first. Each phase got its own commits with its
+own gates, a human led the QA round, and an independent auditor checked the
+evidence before anything counted as done. The audit has teeth: it once
+rejected a completion over an untranslated German "ab" price prefix, and the
+fix shipped before the phase closed. Every gotcha in `AGENTS.md` started as
+a lesson one of us paid for.
+
 ## Notes for agents (and the curious)
 
 `AGENTS.md` records the conventions, the review/QA standards, and the
-platform gotchas that were paid for in QA — including which corners were
-deliberately cut, and why. `HUMANS.md` is the short version of the same
-story.
-
-
+platform gotchas that QA surfaced, including which corners were deliberately
+cut and why. `HUMANS.md` is the short version of the same story.
 
 The best code in this repo is the code it doesn't contain: no manual JSON
-parsing, no image-loader dependency, no navigation framework on iOS — the
+parsing, no image-loader dependency, no navigation framework on iOS. The
 platforms already provide all three, and the diff stays honest about what
 was actually needed.

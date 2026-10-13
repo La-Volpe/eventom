@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "title": "Aurora Nights — Summer Tour 2027",
+    "category": "concerts",
+    "dateTime": "2027-06-12T19:30:00Z",
+    "city": "Berlin",
+    "venue": "Halle am Ufer",
+    "priceFrom": 59.90,
+    "imageRef": "poster_event_1",
+    "shortPitch": "Indie pop under the open sky — the tour of the summer."
+  },
+  {
+    "id": 2,
+    "title": "The Secret of the Masks",
+    "category": "musical-show",
+    "dateTime": "2027-03-19T20:00:00Z",
+    "city": "Hamburg",
+    "venue": "Operettenpalast",
+    "priceFrom": 79.50,
+    "imageRef": "poster_event_2",
+    "shortPitch": "Big feelings, big voices: the season's mystery musical."
+  },
+  {
+    "id": 3,
+    "title": "City derby: Alster Eagles vs. Rhine Lions",
+    "category": "sports",
+    "dateTime": "2027-02-05T15:30:00Z",
+    "city": "Hamburg",
+    "venue": "Eishalle Alsterdamm",
+    "priceFrom": 24.90,
+    "imageRef": "poster_event_3",
+    "shortPitch": "The city-league ice-hockey semi-final — standing-room atmosphere guaranteed."
+  },
+  {
+    "id": 4,
+    "title": "Laughter Fuel — Evening Show",
+    "category": "comedy",
+    "dateTime": "2027-01-23T18:00:00Z",
+    "city": "München",
+    "venue": "Lusthaus am Ring",
+    "priceFrom": 39.90,
+    "imageRef": "poster_event_4",
+    "shortPitch": "Two hours of stand-up, improv and an open mic."
+  },
+  {
+    "id": 5,
+    "title": "Hamlet Reloaded",
+    "category": "theater",
+    "dateTime": "2027-04-08T19:00:00Z",
+    "city": "Köln",
+    "venue": "Schauspielhaus Altstadt",
+    "priceFrom": 34.00,
+    "imageRef": "poster_event_5",
+    "shortPitch": "Shakespeare's classic as a fast-paced double-solo staging."
+  },
+  {
+    "id": 6,
+    "title": "Spring Festival at the City Park",
+    "category": "leisure",
+    "dateTime": "2027-04-24T11:00:00Z",
+    "city": "Leipzig",
+    "venue": "Festwiese Nord",
+    "priceFrom": 8.50,
+    "imageRef": "poster_event_6",
+    "shortPitch": "Fairground rides, a craft market and a family stage on the first May weekend."
+  }
+]

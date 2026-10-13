@@ -4,7 +4,9 @@ import com.eventom.domain.model.Event
 import com.eventom.domain.model.EventCategory
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import com.eventom.language.EffectiveLanguage
 import io.ktor.client.request.get
+import io.ktor.http.HttpHeaders
 import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
@@ -75,7 +77,23 @@ private val EventCategory.wireName: String
  * Real implementation backed by Ktor. Throws on any transport problem —
  * the repository decides what to do about it (fall back to local data).
  */
-class KtorEventRemoteDataSource(private val client: HttpClient) : EventRemoteDataSource {
+class KtorEventRemoteDataSource(
+    private val client: HttpClient,
+    // Injectable provider (bilingual 1/4): every outgoing request carries
+    // Accept-Language sourced from the shared LanguageSetting.
+    private val languageProvider: () -> EffectiveLanguage = { EffectiveLanguage.DE },
+) : EventRemoteDataSource {
     override suspend fun fetchEvents(): List<Event> =
-        client.get("$API_HOST$API_BASE_PATH/events").body<List<EventDto>>().map(EventDto::toDomain)
+        client.get("$API_HOST$API_BASE_PATH/events") {
+            headers.append(HttpHeaders.AcceptLanguage, acceptLanguageWire(languageProvider()))
+        }.body<List<EventDto>>().map(EventDto::toDomain)
+}
+
+/**
+ * Wire header value = the 2-letter code; the fake backend forks on the
+ * "en"/"de" prefix and falls back to "de" for anything else.
+ */
+internal fun acceptLanguageWire(language: EffectiveLanguage): String = when (language) {
+    EffectiveLanguage.DE -> "de"
+    EffectiveLanguage.EN -> "en"
 }

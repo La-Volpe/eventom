@@ -1,0 +1,14 @@
+{
+  "id": 5,
+  "longDescription": "Two actors, one set, 90 minutes: 'Hamlet Reloaded' condenses Shakespeare's classic into a double-solo staging where each performer plays every role. Direction: Ines Falkenrath. To be or not — here both are played.",
+  "lineup": [
+    "Direction: Ines Falkenrath",
+    "Starring: Timo Brandt & Ada Silberstein"
+  ],
+  "doorsTime": "18:15",
+  "ticketCategories": [
+    { "name": "Category 1 — Rows 1–5", "price": 54.00 },
+    { "name": "Category 2 — Stalls", "price": 34.00 }
+  ],
+  "ageInfo": "Age 14 and up"
+}

@@ -1,0 +1,14 @@
+{
+  "id": 3,
+  "longDescription": "When the Alster Eagles meet the Rhine Lions, every second counts: the city-league semi-final decides who plays for the championship in March. Ice hockey in Hamburg means full contact, full song and standing-room atmosphere from start to finish.",
+  "lineup": [
+    "Alster Adler Hamburg",
+    "Rhein Löwen Köln"
+  ],
+  "doorsTime": "14:00",
+  "ticketCategories": [
+    { "name": "Category 1 — Seated stand", "price": 44.90 },
+    { "name": "Category 2 — Standing", "price": 24.90 }
+  ],
+  "ageInfo": "No age restriction"
+}

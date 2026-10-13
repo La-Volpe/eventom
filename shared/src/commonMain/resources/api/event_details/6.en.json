@@ -1,0 +1,14 @@
+{
+  "id": 6,
+  "longDescription": "On the first May weekend the Festwiese Nord turns into a spring market: over 40 artisans, three stages of family programming and fairground rides that have belonged here for three generations. Admission is a single 8.50 € — all stages included.",
+  "lineup": [
+    "Familienbühne Nord",
+    "Volksmusikensemble Stadtpark",
+    "Zirkus Kleine Wolke"
+  ],
+  "doorsTime": "10:30",
+  "ticketCategories": [
+    { "name": "Admission — box office", "price": 8.50 }
+  ],
+  "ageInfo": "No age restriction"
+}

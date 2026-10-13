@@ -5,7 +5,9 @@ import com.eventom.domain.repository.EventDetailRemoteDataSource
 import com.eventom.domain.model.TicketCategory
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import com.eventom.language.EffectiveLanguage
 import io.ktor.client.request.get
+import io.ktor.http.HttpHeaders
 import kotlinx.serialization.Serializable
 
 /** Wire format of `GET /api/event-details/{id}`. */
@@ -36,7 +38,14 @@ internal fun EventDetailDto.toDomain(): EventDetail = EventDetail(
     ageInfo = ageInfo.orEmpty(),
 )
 
-class KtorEventDetailRemoteDataSource(private val client: HttpClient) : EventDetailRemoteDataSource {
+class KtorEventDetailRemoteDataSource(
+    private val client: HttpClient,
+    // Injectable provider (bilingual 1/4): every outgoing request carries
+    // Accept-Language sourced from the shared LanguageSetting.
+    private val languageProvider: () -> EffectiveLanguage = { EffectiveLanguage.DE },
+) : EventDetailRemoteDataSource {
     override suspend fun fetchEventDetail(id: Long): EventDetail =
-        client.get("$API_HOST$API_BASE_PATH/event-details/$id").body<EventDetailDto>().toDomain()
+        client.get("$API_HOST$API_BASE_PATH/event-details/$id") {
+            headers.append(HttpHeaders.AcceptLanguage, acceptLanguageWire(languageProvider()))
+        }.body<EventDetailDto>().toDomain()
 }

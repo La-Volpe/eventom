@@ -1,0 +1,16 @@
+{
+  "id": 1,
+  "longDescription": "Aurora Nights return to Berlin for their Summer Tour 2027. Between light installations and an open-air summer adventure, the band plays the complete new album 'Lichterfest' along with all the radio hits. The sound: driving synths, Nordic melancholy and an audience that stays until midnight.",
+  "lineup": [
+    "Aurora Nights",
+    "Support: Nordlicht Kollektiv",
+    "Support: Fjord & Feuer"
+  ],
+  "doorsTime": "18:00",
+  "ticketCategories": [
+    { "name": "Category 1 — Best Seats", "price": 119.90 },
+    { "name": "Category 2 — Parquet", "price": 89.90 },
+    { "name": "Category 3 — Standing", "price": 59.90 }
+  ],
+  "ageInfo": "Age 6 and up"
+}

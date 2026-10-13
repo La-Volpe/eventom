@@ -63,12 +63,10 @@ internal fun posterResFor(imageRef: String?, category: EventCategory): Int =
 internal fun posterThumbResFor(imageRef: String?, category: EventCategory): Int =
     imageRef?.let(EVENT_THUMB_RESOURCES::get) ?: CATEGORY_THUMB_FALLBACK.getValue(category)
 
-/** Android presentation label map (T6) — German text moves here from the domain enum. */
-internal fun categoryLabel(category: EventCategory): String = when (category) {
-    EventCategory.CONCERTS -> "Konzerte"
-    EventCategory.MUSICAL_SHOW -> "Musical & Show"
-    EventCategory.SPORTS -> "Sport"
-    EventCategory.COMEDY -> "Comedy & Humor"
-    EventCategory.THEATER -> "Theater & Kultur"
-    EventCategory.LEISURE -> "Freizeit"
-}
+/**
+ * Android label access — TASK-2 REWIRING POINT: delegates to the shared
+ * German string table (StringsDe — the generator's label source). The
+ * per-platform inline labels were removed in the bilingual phase.
+ */
+internal fun categoryLabel(category: EventCategory): String =
+    com.eventom.strings.StringsDe.category(category)

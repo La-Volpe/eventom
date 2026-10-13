@@ -1,0 +1,15 @@
+{
+  "id": 2,
+  "longDescription": "A masked ball, a missing will and a voice that carries across three gala nights: 'The Secret of the Masks' combines classic musical dramaturgy with modern stage technology. 24 singers, a full orchestra and masks that change owners on stage.",
+  "lineup": [
+    "Original Cast Hamburg",
+    "Orchester der Operettenpalast"
+  ],
+  "doorsTime": "17:30",
+  "ticketCategories": [
+    { "name": "Premium package incl. prosecco", "price": 149.00 },
+    { "name": "Category 1 — Box seats", "price": 109.50 },
+    { "name": "Category 2 — Balcony", "price": 79.50 }
+  ],
+  "ageInfo": "Age 12 and up"
+}

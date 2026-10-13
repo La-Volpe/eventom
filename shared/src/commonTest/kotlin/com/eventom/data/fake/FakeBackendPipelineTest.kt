@@ -9,7 +9,16 @@ import com.eventom.data.remote.KtorEventRemoteDataSource
 import com.eventom.domain.model.EventCategory
 import com.eventom.domain.model.EventDetail
 import com.eventom.domain.model.AuthUser
+import com.eventom.language.EffectiveLanguage
+import com.eventom.data.remote.EventDto
+import com.eventom.data.remote.toDomain
+import com.eventom.data.remote.API_HOST
+import com.eventom.data.remote.API_BASE_PATH
+import io.ktor.http.HttpHeaders
 import io.ktor.client.HttpClient
+import io.ktor.client.request.get
+import io.ktor.client.call.body
+import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
@@ -95,5 +104,76 @@ class FakeBackendPipelineTest {
         assertFailsWith<io.ktor.client.plugins.ClientRequestException> {
             authSource.login(email = "demo@eventom.dev", password = "hunter2")
         }
+    }
+
+    // MARK: - language routing (bilingual phase)
+
+    /** Client variant adding an Accept-Language header to every request. */
+    private fun clientAccepting(header: String?): HttpClient = HttpClient(fakeBackendEngine()) {
+        // allow non-2xx bodies to flow into the assertions directly
+        expectSuccess = true
+        install(ContentNegotiation) { json() }
+        if (header != null) {
+            defaultRequest {
+                headers.append(HttpHeaders.AcceptLanguage, header)
+            }
+        }
+    }
+
+    /** Raw client + pipeline call: the engine sees exactly this header. */
+    private suspend fun eventsForHeader(header: String?): List<com.eventom.domain.model.Event> =
+        clientAccepting(header)
+            .get("$API_HOST$API_BASE_PATH/events")
+            .body<List<EventDto>>()
+            .map(EventDto::toDomain)
+
+    /** Data-source level: languageProvider drives the wire header (production path). */
+    @Test
+    fun acceptLanguageEnServesEnglishTitles() = runTest {
+        val source = KtorEventRemoteDataSource(clientAccepting(null), languageProvider = { EffectiveLanguage.EN })
+        val events = source.fetchEvents()
+        assertEquals("Aurora Nights — Summer Tour 2027", events.first().title)
+        assertEquals("Laughter Fuel — Evening Show", events.first { it.id == 4L }.title)
+    }
+
+    @Test
+    fun acceptLanguageDeServesGermanTitles() = runTest {
+        val source = KtorEventRemoteDataSource(clientAccepting(null), languageProvider = { EffectiveLanguage.DE })
+        val events = source.fetchEvents()
+        assertEquals("Aurora Nights — Sommer Tour 2027", events.first().title)
+    }
+
+    @Test
+    fun missingAcceptLanguageDefaultsToGerman() = runTest {
+        val events = eventsForHeader(header = null)
+        assertEquals("Aurora Nights — Sommer Tour 2027", events.first().title)
+    }
+
+    @Test
+    fun bogusAcceptLanguageDefaultsToGerman() = runTest {
+        val events = eventsForHeader(header = "fr-CH, fr;q=0.9")
+        assertEquals("Aurora Nights — Sommer Tour 2027", events.first().title)
+    }
+
+    @Test
+    fun detailRouteServesPerLanguageTiers() = runTest {
+        val enDetail = KtorEventDetailRemoteDataSource(
+            clientAccepting(null),
+            languageProvider = { EffectiveLanguage.EN },
+        ).fetchEventDetail(id = 2)
+        assertEquals("Premium package incl. prosecco", enDetail.ticketCategories.first().name)
+
+        val deDetail = KtorEventDetailRemoteDataSource(
+            clientAccepting(null),
+            languageProvider = { EffectiveLanguage.DE },
+        ).fetchEventDetail(id = 2)
+        assertEquals("Premium-Paket inkl. Prosecco", deDetail.ticketCategories.first().name)
+    }
+
+    @Test
+    fun loginStillWorksWithAcceptLanguageHeaderPresent() = runTest {
+        val auth = KtorAuthRemoteDataSource(clientAccepting("en"))
+        val user = auth.login(email = "demo@eventom.dev", password = "demo1234")
+        assertEquals("Demo Fan", user.name)
     }
 }

@@ -10,6 +10,9 @@ import kotlin.test.assertNotNull
  * fixtures; `FakeApiPayloads` is what actually gets served at runtime. This
  * test fails the build the moment they drift apart.
  *
+ * Bilingual: BOTH language families (de + en) are checked for the events
+ * list and every detail payload.
+ *
  * Lives in the JVM-only host-test source set because reading files/classpath
  * resources is not possible in common code.
  */
@@ -17,16 +20,31 @@ class FakeApiPayloadParityTest {
 
     @Test
     fun embeddedPayloadsMatchResourceFiles() {
+        // Events list: DE + EN families.
         assertEquals(
-            resourceText("api/events.json").normalized(),
-            FakeApiPayloads.EVENTS_JSON.normalized(),
+            resourceText("api/events.de.json").normalized(),
+            FakeApiPayloads.EVENTS_JSON_DE.normalized(),
+        )
+        assertEquals(
+            resourceText("api/events.en.json").normalized(),
+            FakeApiPayloads.EVENTS_JSON_EN.normalized(),
+        )
+        // Details: DE + EN families.
+        assertEquals(
+            resourceText("api/event_details/1.de.json").normalized(),
+            FakeApiPayloads.EVENT_DETAILS_DE.getValue(1L).normalized(),
         )
         for (id in 1L..6L) {
             assertEquals(
-                resourceText("api/event_details/$id.json").normalized(),
-                assertNotNull(FakeApiPayloads.eventDetailJson(id), "missing detail payload for id=$id").normalized(),
+                resourceText("api/event_details/$id.de.json").normalized(),
+                assertNotNull(FakeApiPayloads.EVENT_DETAILS_DE[id], "missing de detail payload for id=$id").normalized(),
+            )
+            assertEquals(
+                resourceText("api/event_details/$id.en.json").normalized(),
+                assertNotNull(FakeApiPayloads.EVENT_DETAILS_EN[id], "missing en detail payload for id=$id").normalized(),
             )
         }
+        // Users are language-independent.
         assertEquals(
             resourceText("api/users.json").normalized(),
             FakeApiPayloads.USERS_JSON.normalized(),

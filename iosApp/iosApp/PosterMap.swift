@@ -39,31 +39,12 @@ func posterThumbImageName(imageRef: String?, category: EventCategory) -> String 
     return UIImage(named: candidate) == nil ? categoryFallbackName(category, thumb: true) : candidate
 }
 
-/// iOS presentation label map (T6) — must match the Android map byte-for-byte.
-/// Mapping runs by enum-IDENTITY first (some K/N/iOS runtimes surface `name`
-/// as the raw UPPER_SNAKE enum name, which once rendered `CONCERTS` in the
-/// chip row); the lowercased wire-code switch is belt-and-braces.
+/// iOS label access — TASK-2 REWIRING POINT: delegates to the shared German
+/// string table (StringsDe, the generator's label source); the inline map was
+/// removed in the bilingual phase. StringsDe bridging depends on the enum
+/// identity quirk noted in the shared core, so resolve via the companion.
 func categoryDisplayName(_ category: EventCategory) -> String {
-    let byIdentity: [(EventCategory, String)] = [
-        (EventCategory.concerts, "Konzerte"),
-        (EventCategory.musicalShow, "Musical & Show"),
-        (EventCategory.sports, "Sport"),
-        (EventCategory.comedy, "Comedy & Humor"),
-        (EventCategory.theater, "Theater & Kultur"),
-        (EventCategory.leisure, "Freizeit"),
-    ]
-    for (candidate, label) in byIdentity where category === candidate {
-        return label
-    }
-    switch category.name.lowercased() {
-    case "concerts": return "Konzerte"
-    case "musical-show": return "Musical & Show"
-    case "sports": return "Sport"
-    case "comedy": return "Comedy & Humor"
-    case "theater": return "Theater & Kultur"
-    case "leisure": return "Freizeit"
-    default: return ""
-    }
+    StringsDe.shared.category(category: category)
 }
 
 extension String {

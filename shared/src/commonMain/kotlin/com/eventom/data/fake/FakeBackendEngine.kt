@@ -3,6 +3,7 @@ package com.eventom.data.fake
 import com.eventom.data.remote.LoginRequestDto
 import com.eventom.data.remote.UserDto
 import com.eventom.data.sha.sha256Hex
+import com.eventom.language.EffectiveLanguage
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.MockRequestHandleScope
@@ -38,11 +39,11 @@ fun fakeBackendEngine(json: Json = Json): HttpClientEngine = MockEngine { reques
     val path = request.url.encodedPath
     when {
         request.method == HttpMethod.Get && path == "/api/events" ->
-            respondJson(FakeApiPayloads.EVENTS_JSON)
+            respondJson(FakeApiPayloads.eventsJson(acceptLanguage(request)))
 
         request.method == HttpMethod.Get && path.startsWith("/api/event-details/") -> {
             val id = path.substringAfterLast('/').toLongOrNull()
-            val payload = id?.let(FakeApiPayloads::eventDetailJson)
+            val payload = id?.let { FakeApiPayloads.eventDetailJson(it, acceptLanguage(request)) }
             if (payload != null) {
                 respondJson(payload)
             } else {
@@ -55,6 +56,15 @@ fun fakeBackendEngine(json: Json = Json): HttpClientEngine = MockEngine { reques
 
         else -> respondJsonError(HttpStatusCode.NotFound, "unknown endpoint: $path")
     }
+}
+
+/**
+ * Content-language routing: parse the Accept-Language header prefix ("en"/"de").
+ * Missing/unrecognized values fall back to "de" — the historical default family.
+ */
+private fun acceptLanguage(request: HttpRequestData): EffectiveLanguage {
+    val header = request.headers[HttpHeaders.AcceptLanguage]?.lowercase() ?: return EffectiveLanguage.DE
+    return if (header.startsWith("en")) EffectiveLanguage.EN else EffectiveLanguage.DE
 }
 
 private fun MockRequestHandleScope.respondJson(
@@ -84,7 +94,7 @@ private suspend fun MockRequestHandleScope.respondToLogin(
     // which store SHA-256 hex of the demo passwords (AGENTS.md #18). The posted
     // password is hashed for the comparison; its plaintext is never logged
     // and never stored.
-    val account = json.decodeFromString<List<FakeUserAccount>>(FakeApiPayloads.USERS_JSON)
+    val account = FakeApiPayloads.accounts(json)
         .firstOrNull { it.email == login.email && it.passwordHash == sha256Hex(login.password) }
     return if (account != null) {
         respondJson(json.encodeToString(UserDto(email = account.email, name = account.name)))
@@ -93,10 +103,3 @@ private suspend fun MockRequestHandleScope.respondToLogin(
     }
 }
 
-@kotlinx.serialization.Serializable
-internal data class FakeUserAccount(
-    val email: String,
-    /** SHA-256 hex of the demo password; the plaintext stays a UI hint only. */
-    val passwordHash: String,
-    val name: String,
-)

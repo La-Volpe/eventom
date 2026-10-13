@@ -27,6 +27,11 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
+import com.eventom.language.EffectiveLanguage
+import com.eventom.language.LanguageSetting
+import com.eventom.language.LanguageStore
+import com.eventom.language.defaultLanguageStore
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -79,11 +84,20 @@ val dataModule = module {
             }
         }
     }
-    single<EventRemoteDataSource> { KtorEventRemoteDataSource(get()) }
+    single<EventRemoteDataSource> {
+        val languageSetting = get<LanguageSetting>()
+        KtorEventRemoteDataSource(client = get(), languageProvider = { languageSetting.current })
+    }
     // Consumed by the detail screen (M4) and the login screen (M2); wired
     // and tested here so the fake backend is complete from day one.
-    single<EventDetailRemoteDataSource> { KtorEventDetailRemoteDataSource(get()) }
+    single<EventDetailRemoteDataSource> {
+        val languageSetting = get<LanguageSetting>()
+        KtorEventDetailRemoteDataSource(client = get(), languageProvider = { languageSetting.current })
+    }
     single<AuthRemoteDataSource> { KtorAuthRemoteDataSource(get()) }
+    // Bilingual core (1/4): language state + stores as shared singletons.
+    single<LanguageStore> { defaultLanguageStore() }
+    single<LanguageSetting> { LanguageSetting(get()) }
     single<CoroutineScope> { CoroutineScope(SupervisorJob() + Dispatchers.Main) }
     single<EventRepository> { EventRepositoryImpl(get(), get()).apply { bootstrap() } }
 }

@@ -1,0 +1,15 @@
+{
+  "id": 4,
+  "longDescription": "Laughter Fuel is Hamburg's answer to the grey everyday: two hours of stand-up, improvisation and an open stage where unknown names also get their five minutes. The program changes every evening — coming twice is worth it.",
+  "lineup": [
+    "Host: Miriam Kaltbach",
+    "Headliner: Jonas Zwiebelt",
+    "Open Mic"
+  ],
+  "doorsTime": "17:15",
+  "ticketCategories": [
+    { "name": "Category 1 — table near the stage", "price": 54.90 },
+    { "name": "Category 2 — Free seating", "price": 39.90 }
+  ],
+  "ageInfo": "Age 18 and up"
+}

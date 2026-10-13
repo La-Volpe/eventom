@@ -23,7 +23,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-EVENTS_FIXTURE = ROOT / "shared/src/commonMain/resources/api/events.json"
+EVENTS_FIXTURE = ROOT / "shared/src/commonMain/resources/api/events.de.json"
 OUT_DIR = ROOT / "androidApp/src/main/res/drawable-nodpi"
 # iOS asset catalog: separate catalog so the app icon (when added later) can
 # live in its own Assets.xcassets without touching poster artifacts.
@@ -44,7 +44,7 @@ WHITE = (255, 255, 255)
 import re
 
 _SPEC_FILE = ROOT / "shared/src/commonMain/kotlin/com/eventom/presentation/CategorySpec.kt"
-_LABEL_FILE = ROOT / "androidApp/src/main/kotlin/com/eventom/android/PosterMap.kt"
+_LABEL_FILE = ROOT / "shared/src/commonMain/kotlin/com/eventom/strings/Strings.kt"
 
 
 def _parse_spec() -> dict[str, tuple[tuple[int, int, int], tuple[int, int, int], str]]:

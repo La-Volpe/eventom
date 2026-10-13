@@ -111,9 +111,7 @@ platform gotchas that were paid for in QA — including which corners were
 deliberately cut, and why. `HUMANS.md` is the short version of the same
 story.
 
-## License
 
-MIT — see [LICENSE](LICENSE).
 
 The best code in this repo is the code it doesn't contain: no manual JSON
 parsing, no image-loader dependency, no navigation framework on iOS — the

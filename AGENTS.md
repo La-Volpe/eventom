@@ -188,18 +188,25 @@ uncomment it there if an Intel Mac must build the project.
     thumb (~1.2MB ARGB_8888), detail screens the hero (~29MB decode) — see
     call-site comments. Lookup helpers: `PosterMap.kt` (posterResFor /
     posterThumbResFor) and `PosterMap.swift`. The script parses its palette
-    and stems from `CategorySpec.kt` + the Android label map — one editable
-    source of truth for category metadata.
+    and stems from `CategorySpec.kt` + the shared `Strings.kt` German table
+    (the load-bearing `EventCategory.X -> "label"` lines inside `StringsDe`
+    `category()`) — one editable source of truth for category metadata; the
+    rendering label is the IN-USE language table (`strings.category(...)`),
+    while the generator's palette mapping stays read from the German lines.
 18. **Demo passwords are hashed in fixtures.** `users.json` + its embedded
     mirror store `passwordHash` (SHA-256 hex, lowercase) instead of the
     plaintext; `FakeBackendEngine` compares `sha256Hex(posted password)`.
     The plaintext stays ONLY in the user-facing demo hint; the digest is
     provided by the expect/actual `com.eventom.data.sha.sha256Hex` (JVM
     MessageDigest / CommonCrypto `CC_SHA256`).
-19. **Demo content has exactly one source: the API fixtures.**
-    `data/local/` (SampleEvents) is gone — refresh failures keep previously
-    loaded state and surface `Result.failure`; no bundled fallback lists
-    may return.
+19. **Demo content has exactly one source per language family.**
+    `api/events.{de,en}.json` + `api/event_details/{id}.{de,en}.json` are the
+    canonical fixtures, mirrored inline in `FakeApiPayloads`; the parity
+    test (`FakeApiPayloadParityTest`) guards EACH family against drift — no
+    bundled fallback lists may return. Refresh failures keep previously
+    loaded state and surface `Result.failure`; the backend picks the family
+    per request (Accept-Language header; en prefix → EN, missing/bogus → DE,
+    the historical default — see #24).
 20. **Coverage is measured, not chased.** Run
     `./gradlew :shared:koverHtmlReport` (+ `:shared:koverXmlReport` for
     machine parsing); HTML lands in `shared/build/reports/kover/html/`.
@@ -242,6 +249,25 @@ uncomment it there if an Intel Mac must build the project.
     because of exactly this). The README references the raw main-branch URL,
     so the badge is always the last green run's count.
 
+24. **Bilingual architecture (locked decision 3: strings + language state
+    live in shared).** `com.eventom.language`: `AppLanguage`
+    (SYSTEM/DE/EN) + `EffectiveLanguage` (DE/EN); `LanguageSetting` owns
+    persisted choice via the per-platform stores (Android SharedPreferences
+    "eventom_prefs"/"app_language", iOS NSUserDefaults "app_language" — the
+    FIRST persisted thing in this repo) and resolves
+    effective = persisted else device code (de→DE, ANY other code→EN —
+    the pinned fallback). UI-test hook per platform: Android launch-intent
+    extra `UITEST_LANG` (MainActivity), iOS `-UITEST_LANG` (defaults key /
+    argument domain, `EvenTomApp.init`) — the override wins over persisted
+    and device. `com.eventom.strings`: `StringsDe`/`StringsEn` byte-identical
+    per language across BOTH platforms (the walkthrough suites assert both
+    sets now); every screen takes `strings` down as a parameter. Data:
+    Accept-Language rides every events/detail request (`languageProvider`),
+    `FakeBackendEngine` selects the payload family per request; view models
+    auto-refresh when the effective language changes; the Settings page is
+    the third bottom-bar tab (Events | Settings | About) on both platforms.
+    `PosterMap` delegates category labels to Strings; the poster generator
+    reads the shared `Strings.kt` (#17).
 ## Conventions
 
 - **Naming:** technical identifiers use `eventom` (all-lowercase; packages,

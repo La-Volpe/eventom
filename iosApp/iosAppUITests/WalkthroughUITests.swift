@@ -70,8 +70,43 @@ final class WalkthroughUITests: XCTestCase {
         return element.exists && element.label == label
     }
 
+    /**
+     * Settings-tab + language-row driver (LanguageSwitchUITests pattern):
+     * re-queries fresh each attempt (frames raise on stale AX), retries the
+     * settings tab tap until the row exists, then retries the row tap until
+     * the expected marker appears. `id` ∈ "de" / "en" / "system".
+     */
+    private func switchLanguage(_ id: String, markerLabel: String, in app: XCUIApplication) -> Bool {
+        let row = app.buttons["languageOption-\(id)"].firstMatch
+        let marker = app.buttons[markerLabel].firstMatch
+        if !row.exists {
+            let tabBar = app.tabBars.firstMatch
+            for _ in 0..<3 {
+                Thread.sleep(forTimeInterval: 0.9)
+                if tabBar.exists {
+                    tapFrame(of: tabBar.buttons.element(boundBy: 1), in: app)
+                }
+                if row.waitForExistence(timeout: 4) { break }
+            }
+        }
+        if !row.exists { return false }
+        for _ in 0..<3 {
+            Thread.sleep(forTimeInterval: 0.7)
+            tapFrame(of: row, in: app)
+            if marker.waitForExistence(timeout: 4) { return true }
+        }
+        return marker.exists
+    }
+
+    /// German-pinned launch (bilingual 3/4): the byte-identical QA set this
+    /// suite asserts is the German table; the device locale here is en-US.
+    /// `-UITEST_LANG de` enters NSUserDefaults' argument domain, which
+    /// `EvenTomApp.init` reads into LanguageSetting.setTestOverride — it wins
+    /// over the persisted choice too, so the pin is deterministic regardless
+    /// of what earlier suites/menus left behind.
     private func launchToLogin() -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchArguments += ["-UITEST_LANG", "de"]
         app.launch()
         wait(app.staticTexts["Sign in to see your events"], 6, "login title (routed via splash)")
         return app
@@ -99,6 +134,7 @@ final class WalkthroughUITests: XCTestCase {
     func testSplashShowsWordmarkAndTagline() throws {
         let app = XCUIApplication()
         app.launchEnvironment["UITEST_SPLASH_HOLD_MS"] = "10000"
+        app.launchArguments += ["-UITEST_LANG", "de"]
         app.launch()
 
         wait(app.staticTexts["EVENTOM"], 4, "splash wordmark")
@@ -197,6 +233,51 @@ final class WalkthroughUITests: XCTestCase {
         let refresh = wait(app.buttons["Refresh"], 3, "refresh control")
         tapFrame(of: refresh, in: app)
         poll(timeout: 6, { app.staticTexts["Lachstoff — Abendprogramm"].exists }, "list still populated after refresh")
+
+        // --- Bilingual 3/4: live language switch through Settings ----------
+        // Relaunch WITHOUT the -UITEST_LANG pin: the override wins over user
+        // choices by design, so this phase must exercise the real settings
+        // flow. LanguageSwitchUITests owns the row-tap retry patterns.
+        app.terminate()
+        let switched = XCUIApplication()
+        switched.launch()
+        wait(switched.staticTexts["Sign in to see your events"], 8, "relaunch → login")
+        fillLogin(app: switched, email: "demo@eventom.dev", password: "demo1234")
+        let signInAgain = wait(switched.buttons["Sign in"], 2, "sign-in CTA")
+        tapFrame(of: signInAgain, in: switched)
+        wait(switched.staticTexts["Hi, Demo Fan"], 10, "events greeting after relaunch login")
+
+        let eventCard = switched.staticTexts["Lachstoff — Abendprogramm"].firstMatch
+        let settingsTab = switched.tabBars.firstMatch.buttons.element(boundBy: 1)
+
+        // Normalize the persisted choice to Deutsch deterministically (a
+        // fresh install would seed SYSTEM → EN on this en-US simulator).
+        XCTAssertTrue(switchLanguage("de", markerLabel: "Systemstandard", in: switched), "normalized to Deutsch")
+
+        // Deutsch byte set on the events tab (title + German chips family).
+        tapFrame(of: switched.tabBars.firstMatch.buttons.element(boundBy: 0), in: switched)
+        poll(timeout: 10, { eventCard.exists }, "German card title after normalize")
+        poll(timeout: 6, { switched.buttons["Konzerte"].exists || switched.buttons["Musical & Show"].exists }, "German chips after normalize")
+
+        // Switch to ENGLISH via the settings rows.
+        XCTAssertTrue(switchLanguage("en", markerLabel: "System default", in: switched), "switched to English")
+
+        // English byte set: tab label, rows, and the re-rendered events list.
+        poll(timeout: 6, { switched.tabBars.firstMatch.buttons["Settings"].exists }, "EN settings tab label")
+        tapFrame(of: switched.tabBars.firstMatch.buttons.element(boundBy: 0), in: switched)
+        poll(timeout: 10, { switched.staticTexts["Laughter Fuel — Evening Show"].exists }, "EN card title (auto-refresh)")
+        poll(timeout: 6, { switched.buttons["Concerts"].exists || switched.buttons["Musicals & Shows"].exists }, "EN chips")
+        poll(timeout: 6, { switched.staticTexts["Hi, Demo Fan"].exists }, "EN greeting intact")
+        // Byte-identical across both languages: price + save label.
+        poll(timeout: 4, { switched.staticTexts["ab 39.90 €"].exists }, "price unchanged")
+        poll(timeout: 4, { switched.buttons["Save"].exists || switched.buttons["Unsave"].exists }, "save label present")
+
+        // …and back to Deutsch.
+        XCTAssertTrue(switchLanguage("de", markerLabel: "Systemstandard", in: switched), "back to Deutsch")
+        poll(timeout: 6, { switched.tabBars.firstMatch.buttons["Einstellungen"].exists }, "DE settings tab label restored")
+        tapFrame(of: switched.tabBars.firstMatch.buttons.element(boundBy: 0), in: switched)
+        poll(timeout: 10, { switched.staticTexts["Lachstoff — Abendprogramm"].exists }, "German card title restored")
+        poll(timeout: 6, { switched.buttons["Konzerte"].exists || switched.buttons["Musical & Show"].exists }, "German chips restored")
     }
 
     // MARK: - detail journey (IOS-3)

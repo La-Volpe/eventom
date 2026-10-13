@@ -5,6 +5,8 @@ The short version of this project, for a human on a coffee break.
 ## What it is
 
 An Eventim-style ticketing demo: splash → login → events list → event detail.
+The UI is bilingual — it starts in the device's language, and the Settings tab
+switches German/English live (the demo data ships in both languages).
 No real backend, no store release. One Kotlin codebase drives a native Android
 app (Compose) and a native iOS app (SwiftUI).
 
@@ -83,9 +85,14 @@ relaunching.
 
 ## What this is not
 
-- No persistence: the session and saved events live in memory and die with the
-  process.
-- German only, and the content is offline only (no remote images).
+- Almost no persistence: the session and saved events live in memory and die
+  with the process. The one thing that DOES survive a relaunch is the language
+  choice (set in the Settings tab), kept in a per-platform store —
+  SharedPreferences on Android, NSUserDefaults on iOS.
+- The UI is bilingual (German/English; default is the device language,
+  switchable in the Settings tab) and the content is offline only (no remote
+  images): demo data exists in both languages as two fixture families shipped
+  in the app.
 - CI is basic: GitHub Actions runs the shared tests and builds the artifacts
   (APK + iOS simulator app) on every push; the interactive walkthrough suites
   stay local — they need devices.

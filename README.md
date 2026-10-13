@@ -8,8 +8,10 @@ two platform clients render fully natively — Jetpack Compose on Android,
 SwiftUI on iOS.
 
 It is a demo, and it says so up front: the "backend" ships inside the app,
-the content is German, and nothing survives a relaunch. What's real is the
-architecture and the test discipline around it.
+the UI is bilingual (device language by default, settings switch German/
+English live), and almost nothing survives a relaunch — the language choice
+is the only thing that persists. What's real is the architecture and the
+test discipline around it.
 
 | Android | iOS |
 |---|---|

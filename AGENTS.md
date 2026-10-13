@@ -267,7 +267,9 @@ uncomment it there if an Intel Mac must build the project.
     auto-refresh when the effective language changes; the Settings page is
     the third bottom-bar tab (Events | Settings | About) on both platforms.
     `PosterMap` delegates category labels to Strings; the poster generator
-    reads the shared `Strings.kt` (#17).
+    reads the shared `Strings.kt` (#17). Price-from comes through the table
+    (`Strings.priceFrom(min:)`, "ab %s" / "from %s") — no hardcoded "ab"
+    outside Strings:
 ## Conventions
 
 - **Naming:** technical identifiers use `eventom` (all-lowercase; packages,

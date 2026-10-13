@@ -269,7 +269,7 @@ final class WalkthroughUITests: XCTestCase {
         poll(timeout: 6, { switched.buttons["Concerts"].exists || switched.buttons["Musicals & Shows"].exists }, "EN chips")
         poll(timeout: 6, { switched.staticTexts["Hi, Demo Fan"].exists }, "EN greeting intact")
         // Byte-identical across both languages: price + save label.
-        poll(timeout: 4, { switched.staticTexts["ab 39.90 €"].exists }, "price unchanged")
+        poll(timeout: 4, { switched.staticTexts["from 39.90 €"].exists }, "EN price-from line")
         poll(timeout: 4, { switched.buttons["Save"].exists || switched.buttons["Unsave"].exists }, "save label present")
 
         // …and back to Deutsch.

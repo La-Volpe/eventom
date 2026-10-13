@@ -198,7 +198,7 @@ private fun EventCard(
                 // detail screen's price line.
                 event.priceFrom?.let { price ->
                     Text(
-                        "ab ${formatPrice(price)}",
+                        strings.priceFrom(min = formatPrice(price)),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = TicketBlue,

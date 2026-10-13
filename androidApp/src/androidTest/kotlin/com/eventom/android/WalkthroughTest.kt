@@ -8,6 +8,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import com.eventom.di.SharedKoin
+import com.eventom.strings.StringsEn
 import com.eventom.language.AppLanguage
 import org.junit.Rule
 import org.junit.Test
@@ -155,9 +156,9 @@ class WalkthroughTest {
         waitUntilTextExists("Musicals & Shows", 6_000)
         waitUntilTextExists("Theater & Culture", 6_000)
 
-        // …unchanged QA contract where languages match byte-for-byte.
+        // English contract incl. the translated price prefix (StringsEn).
         waitUntilText("Laughter Fuel — Evening Show", 8_000) // auto-refresh family
-        waitUntilText("ab 39.90 €", 6_000)
+        waitUntilText(StringsEn.priceFrom(min = "39.90 €"), 6_000)
         waitUntilText("☆ Save", 6_000)
 
         // And the saved flag survived the payload-family switch.

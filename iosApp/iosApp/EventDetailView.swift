@@ -207,7 +207,7 @@ private struct EventDetailContent: View {
     }
 
     private var priceText: String? {
-        event.priceFrom.map { String(format: "ab %.2f €", $0.doubleValue) }
+        event.priceFrom.map { strings.priceFrom(min: String(format: "%.2f €", $0.doubleValue)) }
     }
 
     var body: some View {

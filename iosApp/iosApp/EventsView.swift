@@ -276,7 +276,9 @@ private struct EventCard: View {
                 .font(.caption)
                 .foregroundStyle(.tertiary)
                 if let priceFrom = event.priceFrom {
-                    Text(String(format: "ab %.2f €", priceFrom.doubleValue))
+                    Text(
+                    strings.priceFrom(min: String(format: "%.2f €", priceFrom.doubleValue))
+                )
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(EvenTomColors.ticketBlue)
                 }

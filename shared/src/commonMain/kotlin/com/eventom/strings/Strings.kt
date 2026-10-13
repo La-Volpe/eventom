@@ -45,6 +45,9 @@ interface Strings {
     fun infoTitle(): String
     fun doorsLabel(time: String): String
     fun ticketCategoriesTitle(): String
+    /** Price-from line: [min] is the formatted amount (rendered "exactly" as
+     *  today on the German side: "ab 24.90 €" byte-parity, EN: "from 24.90 €"). */
+    fun priceFrom(min: String): String
     fun buyTicketsCta(): String
     fun offlineDemoFeedback(): String
     fun loadingDetails(): String
@@ -102,6 +105,7 @@ object StringsDe : Strings {
     override fun infoTitle(): String = "Info"
     override fun doorsLabel(time: String): String = "Doors: $time"
     override fun ticketCategoriesTitle(): String = "Ticket categories"
+    override fun priceFrom(min: String): String = "ab $min"
     override fun buyTicketsCta(): String = "Tickets kaufen"
     override fun offlineDemoFeedback(): String = "Offline-Demo"
     override fun loadingDetails(): String = "Loading details…"
@@ -165,6 +169,7 @@ object StringsEn : Strings {
     override fun infoTitle(): String = "Info"
     override fun doorsLabel(time: String): String = "Doors: $time"
     override fun ticketCategoriesTitle(): String = "Ticket categories"
+    override fun priceFrom(min: String): String = "from $min"
     override fun buyTicketsCta(): String = "Buy tickets"
     override fun offlineDemoFeedback(): String = "Offline demo"
     override fun loadingDetails(): String = "Loading details…"

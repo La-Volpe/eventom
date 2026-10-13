@@ -276,7 +276,7 @@ private fun EventDetailContent(
             // Prominent "ab X.XX €" price line.
             event.priceFrom?.let { price ->
                 Text(
-                    "ab ${formatPrice(price)}",
+                    strings.priceFrom(min = formatPrice(price)),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = TicketBlue,

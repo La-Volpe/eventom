@@ -50,6 +50,13 @@ class StringsTest {
     }
 
     @Test
+    fun priceFromLineBothLanguages() {
+        // Byte-parity on the German side; EN drops the German "ab" chrome.
+        assertEquals("ab 24.90 €", StringsDe.priceFrom(min = "24.90 €"))
+        assertEquals("from 24.90 €", StringsEn.priceFrom(min = "24.90 €"))
+    }
+
+    @Test
     fun germanWordmarkAndTaglineUnchanged() {
         assertEquals("Tickets für Live-Entertainment", StringsDe.splashTagline())
         assertEquals("Tickets for live entertainment", StringsEn.splashTagline())

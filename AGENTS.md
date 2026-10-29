@@ -43,7 +43,7 @@ reword one platform.
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build   # build iOS app
 xcodebuild test -project iosApp/iosApp.xcodeproj -scheme iosApp \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'        # iOS done-gate: XCUITest walkthrough (6 test funcs)
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'        # iOS done-gate: XCUITest walkthrough (7 test funcs: 6 walkthrough + language switch)
 open iosApp/iosApp.xcodeproj                      # run iOS app from Xcode (⌘R)
 ```
 
@@ -342,7 +342,8 @@ uncomment it there if an Intel Mac must build the project.
   wording means updating fixtures and both tests in one commit.
 - Test ledger at HEAD: 193 shared tests (101 JVM host, 8 of them
   Robolectric-backed + 92 iOS-sim), 1 connected Android walkthrough,
-  6 iOS XCUITests — all green per phase.
+  7 iOS XCUITests (6 walkthrough functions + `LanguageSwitchUITests`) —
+  all green per phase.
 - The repo is git; it is published at github.com/La-Volpe/eventom (origin added
   after the improvement plan; history starts at the first feature-complete
   commit).

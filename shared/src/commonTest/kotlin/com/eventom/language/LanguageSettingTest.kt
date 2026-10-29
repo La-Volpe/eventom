@@ -74,4 +74,71 @@ class LanguageSettingTest {
         assertEquals(EffectiveLanguage.DE, last)
         observation.stop()
     }
+
+    /** A store that already holds "en" (a relaunch after choosing EN). */
+    @Test
+    fun storedEnglishCodeRoundtripsToEffectiveEN() {
+        val store = MemoryLanguageStore()
+        store.writeStoredLanguage("en")
+
+        val setting = makeSetting(store)
+
+        assertEquals(AppLanguage.EN, setting.persistedChoice.value)
+        assertEquals(EffectiveLanguage.EN, setting.effective.value)
+    }
+
+    /** The UI-test hook is set and CLEARED at runtime (WalkthroughTest does
+     *  exactly this); clearing must fall back to the persisted choice, not to
+     *  the device locale. */
+    @Test
+    fun setTestOverrideWinsThenClearingRestoresThePersistedChoice() {
+        val store = MemoryLanguageStore()
+        val setting = makeSetting(store, testOverride = { "en" })
+        setting.choose(AppLanguage.DE)
+        assertEquals(EffectiveLanguage.EN, setting.effective.value, "the override wins over the persisted DE")
+
+        setting.setTestOverride("de")
+        assertEquals(EffectiveLanguage.DE, setting.effective.value)
+
+        setting.setTestOverride(null)
+        assertEquals(EffectiveLanguage.DE, setting.effective.value, "cleared override must fall back to the persisted DE")
+    }
+
+    /** Choosing "System" clears the stored code instead of persisting a
+     *  sentinel — the store contract is "de"/"en"/"" only. */
+    @Test
+    fun chooseSystemClearsTheStoredChoice() {
+        val store = MemoryLanguageStore()
+        val setting = makeSetting(store)
+
+        setting.choose(AppLanguage.DE)
+        assertEquals("de", store.stored)
+
+        setting.choose(AppLanguage.SYSTEM)
+
+        assertEquals(LANGUAGE_STORE_EMPTY, store.stored)
+        assertEquals(AppLanguage.SYSTEM, setting.persistedChoice.value)
+    }
+
+    /** The Settings screen observes the raw choice (not the resolved DE/EN),
+     *  so the radio row can show "System default" as selected. */
+    @Test
+    fun observePersistedChoiceDeliversTheRawChoiceAndStops() {
+        val setting = makeSetting()
+        val seen = mutableListOf<AppLanguage>()
+
+        val observation = setting.observePersistedChoice { seen.add(it) }
+        setting.choose(AppLanguage.EN)
+        setting.choose(AppLanguage.SYSTEM)
+
+        assertEquals(
+            listOf(AppLanguage.SYSTEM, AppLanguage.EN, AppLanguage.SYSTEM),
+            seen,
+        )
+
+        observation.stop()
+        val delivered = seen.size
+        setting.choose(AppLanguage.DE)
+        assertEquals(delivered, seen.size, "delivery must end after stop()")
+    }
 }

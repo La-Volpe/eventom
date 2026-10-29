@@ -10,6 +10,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
@@ -70,5 +72,18 @@ class SessionStoreTest {
         // observer would have appended during sign-in; the count proves stop().
         assertEquals(nowCount, observed.size, "delivery must stop after stop()")
         assertEquals(demoUser, session.currentUser.value)
+    }
+
+    /** Navigation branches on this flag (Android `MainActivity` splash,
+     *  iOS `RootView`), so it must track sign-in/out without an observer. */
+    @Test
+    fun isSignedInTracksTheSession() {
+        val session = makeStore()
+
+        assertFalse(session.isSignedIn, "nobody is signed in on a cold start")
+        session.signIn(demoUser)
+        assertTrue(session.isSignedIn)
+        session.signOut()
+        assertFalse(session.isSignedIn, "sign-out must clear the flag")
     }
 }

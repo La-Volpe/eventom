@@ -5,7 +5,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,10 +50,5 @@ abstract class BaseViewModel<S>(initialState: S, mainScope: CoroutineScope? = nu
                 job.cancel()
             }
         }
-    }
-
-    /** Cancels all work; UIs should call this when the screen goes away for good. */
-    fun dispose() {
-        scope.cancel()
     }
 }

@@ -16,6 +16,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 
 /** Timeout-shaped failure for the HttpTimeout-policy test hook (T2). */
@@ -251,5 +252,31 @@ class EventRepositoryImplTest {
         val second = repository.refresh()
         assertTrue(second.isFailure, "unknown-category failure must surface through the repository")
         assertEquals(prior, repository.observeEvents().first(), "prior list must be kept on the parse failure")
+    }
+
+    /**
+     * `bootstrap()` is the production entry point (Koin calls it right after
+     * constructing the repository), so the first page must arrive on the
+     * repository's own scope without the caller awaiting it.
+     */
+    @Test
+    fun bootstrapLoadsTheFirstPageOnTheRepositoryScope() = runTest(timeout = 10.seconds) {
+        val remoteEvent = Event(
+            id = 7,
+            title = "Bootstrapped event",
+            summary = "",
+            category = EventCategory.CONCERTS,
+            startTime = seed + 1.hours,
+            city = "Bremen",
+            venue = "Pier 2",
+        )
+        val repository = makeRepository(ScriptedRemote(listOf(Result.success(listOf(remoteEvent)))))
+
+        repository.bootstrap() // returns immediately; the fetch runs on `scope`
+
+        // `.first { }` suspends on the flow, so no virtual-time delay is
+        // involved while the Default-dispatcher fetch is in flight.
+        val loaded = repository.observeEvents().first { it.isNotEmpty() }
+        assertEquals(listOf(remoteEvent), loaded)
     }
 }

@@ -20,7 +20,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respondError
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -171,6 +174,129 @@ class EventDetailViewModelTest {
         awaitState(viewModel) { it is EventDetailUiState.Success }
 
         viewModel.reset()
+        assertIs<EventDetailUiState.Idle>(viewModel.state.value)
+    }
+
+    /**
+     * A 404 for an event that IS in the list must be phrased by
+     * `failureMessage` ("no longer available"), not by the generic branch —
+     * the two paths look identical to the user but only one is reached when
+     * the list-side event resolves.
+     */
+    @Test
+    fun remoteNotFoundForListedEventReportsUnavailable(): Unit = runBlocking {
+        val missing = listEvent.copy(id = 99L)
+        val (viewModel, _) = makeViewModel(events = listOf(missing))
+
+        viewModel.load(eventId = 99L)
+
+        val state = awaitState(viewModel) { it is EventDetailUiState.Error }
+        assertEquals("This event is no longer available", (state as EventDetailUiState.Error).message)
+    }
+
+    /** Transport/parse failures are NOT "no longer available": the event is
+     *  still listed, so the message must invite a retry. */
+    @Test
+    fun transportFailureForListedEventReportsGenericError(): Unit = runBlocking {
+        val broken = object : EventDetailRemoteDataSource {
+            override suspend fun fetchEventDetail(id: Long): EventDetail = error("socket closed")
+        }
+        val (viewModel, _) = makeViewModel(detailSource = broken)
+
+        viewModel.load(eventId = 2L)
+
+        val state = awaitState(viewModel) { it is EventDetailUiState.Error }
+        assertEquals(
+            "Couldn't load details — check your connection and try again",
+            (state as EventDetailUiState.Error).message,
+        )
+    }
+
+    /** Double-tap on the card must not fire a second fetch (same guard class as
+     *  the login screen's no-double-submit). */
+    @Test
+    fun secondLoadWhileLoadingIsIgnored(): Unit = runBlocking {
+        val gate = CompletableDeferred<Unit>()
+        val counting = object : EventDetailRemoteDataSource {
+            var calls = 0
+            override suspend fun fetchEventDetail(id: Long): EventDetail {
+                calls += 1
+                return realDetailSource.fetchEventDetail(id = id)
+            }
+        }
+        val (viewModel, _) = makeViewModel(detailSource = GatedDetail(counting, gate))
+
+        viewModel.load(eventId = 2L)
+        assertIs<EventDetailUiState.Loading>(viewModel.state.value)
+        viewModel.load(eventId = 2L) // ignored: state is Loading
+
+        gate.complete(Unit)
+        awaitState(viewModel) { it is EventDetailUiState.Success }
+        assertEquals(1, counting.calls, "the second load() must not reach the remote source")
+    }
+
+    /** The typed closure iOS consumes (gotcha #14): states arrive on subscribe
+     *  and on every change, and stop() ends delivery. */
+    @Test
+    fun observeDeliversStatesAndStops(): Unit = runBlocking {
+        val (viewModel, _) = makeViewModel()
+        val seen = mutableListOf<EventDetailUiState>()
+
+        val observation = viewModel.observe { seen.add(it) }
+        viewModel.load(eventId = 2L)
+        awaitState(viewModel) { it is EventDetailUiState.Success }
+
+        assertIs<EventDetailUiState.Idle>(seen.first())
+        assertTrue(seen.any { it is EventDetailUiState.Loading }, "Loading was skipped: $seen")
+        assertTrue(seen.any { it is EventDetailUiState.Success }, "Success never delivered: $seen")
+
+        observation.stop()
+        val delivered = seen.size
+        viewModel.reset()
+        assertEquals(delivered, seen.size, "delivery must end after stop()")
+    }
+
+    /**
+     * A 4xx that is NOT 404 (here a 403 from a real Ktor engine) must fall
+     * through to the generic message. Note 5xx would NOT reach this branch at
+     * all: Ktor maps 5xx to ServerResponseException, which is not a
+     * ClientRequestException — the `error is ClientRequestException` test is
+     * false for it.
+     */
+    @Test
+    fun forbiddenForListedEventReportsGenericError(): Unit = runBlocking {
+        val failing = HttpClient(
+            MockEngine { respondError(HttpStatusCode.Forbidden) },
+        ) {
+            expectSuccess = true
+            install(ContentNegotiation) { json() }
+        }
+        try {
+            val (viewModel, _) = makeViewModel(detailSource = KtorEventDetailRemoteDataSource(failing))
+
+            viewModel.load(eventId = 2L)
+
+            val state = awaitState(viewModel) { it is EventDetailUiState.Error }
+            assertEquals(
+                "Couldn't load details — check your connection and try again",
+                (state as EventDetailUiState.Error).message,
+            )
+        } finally {
+            failing.close()
+        }
+    }
+
+    /** Production leaves `mainScope` unset (Main dispatcher) — construction with
+     *  the DEFAULT argument (not an explicit null) must not throw before any
+     *  work is dispatched (gotcha #9). */
+    @Test
+    fun defaultScopeConstructionIsUsable() {
+        val viewModel = EventDetailViewModel(
+            fetchDetail = FetchEventDetailUseCase(realDetailSource),
+            repository = FakeEventRepository(listOf(listEvent)),
+            languageSetting = LanguageSetting(store = MemoryLanguageStore()),
+        )
+
         assertIs<EventDetailUiState.Idle>(viewModel.state.value)
     }
 }

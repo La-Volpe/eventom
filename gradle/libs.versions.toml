@@ -12,6 +12,7 @@ composeBom = "2026.09.00"
 activityCompose = "1.13.0"
 lifecycle = "2.11.0"
 navigationCompose = "2.9.8"
+robolectric = "4.17"
 
 [libraries]
 # Kotlin / KotlinX ----------------------------------------------------------------
@@ -20,6 +21,12 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
+# Robolectric (androidHostTest only): the android ACTUALS of `shared` need a real
+# Context (SharedPreferences, Locale, OkHttp engine factory). Without it those
+# lines are unmeasurable from commonTest — Kover does not support the native
+# targets, so the JVM host suite is the only coverage source there is.
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
 # Koin (DI, works on Android & iOS from the shared module) -------------------------
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }

@@ -23,7 +23,7 @@ What's hard here:
   answers inside the real client pipeline, so serialization and error paths
   run for real. Switching to a live backend is a config flag (#13, #22:
   [headers, timeouts, logging](https://github.com/La-Volpe/eventom/blob/main/AGENTS.md#L232)).
-- **113 tests, three targets, five CI jobs.** Per-language fixture families
+- **193 tests, three targets, five CI jobs.** Per-language fixture families
   are guarded by a parity test, and every push is gated (#19, #23:
   [per-language content + the badge mechanism](https://github.com/La-Volpe/eventom/blob/main/AGENTS.md#L241)).
 
@@ -89,10 +89,12 @@ There is no CocoaPods. The Xcode project's Run Script phase calls
 
 ## Testing
 
-- `shared/src/{commonTest,androidHostTest}`: 113 tests (57 on the JVM, 56 as
+- `shared/src/{commonTest,androidHostTest}`: 193 tests (101 on the JVM —
+  8 of them Robolectric-backed against the android actuals — and 92 as
   Kotlin/Native on the iOS simulator) covering the fake-backend pipeline,
   the repository, the auth and detail view models, fixture parity per
-  language, language switching, and the no-fallback error paths.
+  language, language switching, the no-fallback error paths, and the full
+  bilingual string table. Line coverage is gated at 100 % (`koverVerify`).
 - `androidApp/src/androidTest`: a single connected Compose walkthrough of
   the full journey — German-pinned, then through the in-app switch to
   English and back — with navigation route assertions along the way.

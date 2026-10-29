@@ -9,7 +9,10 @@ import com.eventom.language.LanguageSetting
 import com.eventom.language.MemoryLanguageStore
 import com.eventom.session.SessionStore
 import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respondError
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -163,6 +166,69 @@ class AuthViewModelTest {
         awaitState(viewModel) { it is AuthUiState.Success }
 
         viewModel.reset()
+        assertIs<AuthUiState.Idle>(viewModel.state.value)
+    }
+
+    /**
+     * Only a 401 means "wrong credentials". Any other 4xx (here 403) is a
+     * refused call, not a typo — it must take the generic branch. Note a 5xx
+     * would not reach this branch at all: Ktor maps 5xx to
+     * ServerResponseException, not ClientRequestException.
+     */
+    @Test
+    fun forbiddenLoginIsNotReportedAsWrongPassword(): Unit = runBlocking {
+        val forbidden = HttpClient(
+            MockEngine { respondError(HttpStatusCode.Forbidden) },
+        ) {
+            expectSuccess = true
+            install(ContentNegotiation) { json() }
+        }
+        try {
+            val (viewModel, session) = makeViewModel(KtorAuthRemoteDataSource(forbidden))
+
+            viewModel.signIn(email = "demo@eventom.dev", password = "demo1234")
+
+            val state = awaitState(viewModel) { it is AuthUiState.Error }
+            assertEquals(
+                "Sign in failed — check your connection and try again",
+                (state as AuthUiState.Error).message,
+            )
+            assertNull(session.currentUser.value, "a refused sign-in must not create a session")
+        } finally {
+            forbidden.close()
+        }
+    }
+
+    /** The typed closure iOS consumes (gotcha #14). */
+    @Test
+    fun observeDeliversStatesAndStops(): Unit = runBlocking {
+        val (viewModel, _) = makeViewModel(realRemote)
+        val seen = mutableListOf<AuthUiState>()
+
+        val observation = viewModel.observe { seen.add(it) }
+        viewModel.signIn(email = "demo@eventom.dev", password = "demo1234")
+        awaitState(viewModel) { it is AuthUiState.Success }
+
+        assertIs<AuthUiState.Idle>(seen.first())
+        assertTrue(seen.any { it is AuthUiState.Loading }, "Loading was skipped: $seen")
+        assertTrue(seen.any { it is AuthUiState.Success }, "Success never delivered: $seen")
+
+        observation.stop()
+        val delivered = seen.size
+        viewModel.reset()
+        assertEquals(delivered, seen.size, "delivery must end after stop()")
+    }
+
+    /** Production leaves `mainScope` unset (Main dispatcher) — construction with
+     *  the DEFAULT argument must not throw (gotcha #9). */
+    @Test
+    fun defaultScopeConstructionIsUsable() {
+        val viewModel = AuthViewModel(
+            login = LoginUseCase(realRemote),
+            session = SessionStore(),
+            languageSetting = LanguageSetting(store = MemoryLanguageStore()),
+        )
+
         assertIs<AuthUiState.Idle>(viewModel.state.value)
     }
 }

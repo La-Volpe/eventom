@@ -38,6 +38,7 @@ reword one platform.
 ./gradlew :shared:testIosSimulatorArm64Test       # common tests on iOS simulator  (task: :shared:iosSimulatorArm64Test)
 ./gradlew :androidApp:connectedDebugAndroidTest   # Android done-gate: connected walkthrough (emulator required)
 ./gradlew :shared:koverXmlReport :shared:koverHtmlReport   # coverage: HTML in shared/build/reports/kover/html/
+./gradlew :shared:koverVerify                     # coverage GATE (100% line) — runs in CI
 ./gradlew :androidApp:installDebug                # run Android app
 xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp \
   -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build   # build iOS app
@@ -207,12 +208,29 @@ uncomment it there if an Intel Mac must build the project.
     loaded state and surface `Result.failure`; the backend picks the family
     per request (Accept-Language header; en prefix → EN, missing/bogus → DE,
     the historical default — see #24).
-20. **Coverage is measured, not chased.** Run
-    `./gradlew :shared:koverHtmlReport` (+ `:shared:koverXmlReport` for
-    machine parsing); HTML lands in `shared/build/reports/kover/html/`.
-    Excluded from counting: `com.eventom.di` (Koin wiring),
-    `com.eventom.data.fake` (offline demo backend — exercised end-to-end by
-    walkthroughs) and `com.eventom.platform` (expect/actual plumbing).
+20. **Coverage is measured, not chased — and gated at the measured number.**
+    `./gradlew :shared:koverVerify` enforces `minBound(100, LINE)` (rule in
+    `shared/build.gradle.kts`) and runs in CI; `:shared:koverHtmlReport`
+    (+ `:shared:koverXmlReport` for machine parsing) still writes HTML to
+    `shared/build/reports/kover/html/`. At HEAD: **100 % LINE / 100 % METHOD /
+    100 % CLASS, 64.9 % BRANCH**. Branch is deliberately UNGATED: 49 of the 52
+    remaining branch misses are compiler/serialization-generated outcomes on
+    the `@Serializable` DTO headers (`EventRemoteDataSource.kt:35`,
+    `EventDetailRemoteDataSource.kt:14/25/38` — the last three are BLANK
+    lines), with no source statement left to execute. Excluded from counting:
+    `com.eventom.di` (Koin wiring), `com.eventom.data.fake` (offline demo
+    backend — exercised end-to-end by walkthroughs) and `com.eventom.platform`
+    (expect/actual plumbing).
+    Three traps this cost already paid for: (a) Kover collects only from
+    `testAndroidHostTest` — native targets are not instrumented, so the iOS-sim
+    tests contribute NOTHING to the number (it is a floor for the suite, never
+    a ceiling); (b) running `testAndroidHostTest --tests X` before
+    `koverXmlReport` yields a report scoped to X — it read 28.9 % once that way,
+    always run the full task before measuring; (c) the android actuals that need
+    a real `Context` (`language/LanguageStore.android.kt`,
+    `data/http/HttpEngineFactory.android.kt`) are measured through
+    `androidHostTest` under Robolectric 4.17, which is the only reason those
+    packages reach 100 % at all.
 21. **Navigation is framework-owned on both platforms (plan T18/D4).**
     Android: Compose `NavHost` with typed routes (`splash`, `login`,
     `events`, `about`, `detail/{eventId}`; `navigation-compose 2.9.8`),
@@ -280,14 +298,19 @@ uncomment it there if an Intel Mac must build the project.
 26. **Style checks are a baseline gate, not a mandate to reformat.** ktlint
     (`org.jlleitschuh.gradle.ktlint` 13.1.0) runs `ktlintCheck` on `:shared`
     and `:androidApp` in CI, with the pre-existing findings carried in
-    `config/ktlint/baseline.xml` (625 entries: signature/wrapping rules,
+    `config/ktlint/baseline.xml` (671 entries: signature/wrapping rules,
     final newlines). Generating baselines was deliberate — the tree's raw
     strings that feed the parity payloads (`FakeApiPayloads.kt`) and the
     use-case file-naming convention (`EventUseCases.kt` etc.) live in rules
     that either cannot auto-fix or would churn house structure; blanket
     reformatting also once TRUNCATED a build file during this work. New
     violations fail CI; old ones stay quarantined until someone touches the
-    file anyway.
+    file anyway. **Trap:** both modules point at that ONE file, so
+    `:androidApp:ktlintBaseline` (which has zero findings) overwrites
+    `:shared`'s quarantine with an empty baseline — regenerate with
+    `:shared:ktlintBaseline` alone. Editing a baselined file re-anchors its
+    entries, so a touched file reports its old findings at new line numbers
+    until the baseline is regenerated.
 
 ## Conventions
 
@@ -317,8 +340,9 @@ uncomment it there if an Intel Mac must build the project.
   walkthrough suites — Android connected `WalkthroughTest.kt` and iOS
   `WalkthroughUITests.swift` (which also proves route shape) — so changing
   wording means updating fixtures and both tests in one commit.
-- Test ledger at HEAD: 67 shared tests (34 JVM host + 33 iOS-sim),
-  1 connected Android walkthrough, 6 iOS XCUITests — all green per phase.
+- Test ledger at HEAD: 193 shared tests (101 JVM host, 8 of them
+  Robolectric-backed + 92 iOS-sim), 1 connected Android walkthrough,
+  6 iOS XCUITests — all green per phase.
 - The repo is git; it is published at github.com/La-Volpe/eventom (origin added
   after the improvement plan; history starts at the first feature-complete
   commit).

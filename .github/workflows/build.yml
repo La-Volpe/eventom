@@ -43,8 +43,8 @@ jobs:
         with:
           name: test-reports
           path: "**/build/reports/tests/"
-      - name: Kover XML
-        run: ./gradlew :shared:koverXmlReport
+      - name: Coverage gate (Kover)
+        run: ./gradlew :shared:koverVerify :shared:koverXmlReport
       - name: Upload Kover XML
         uses: actions/upload-artifact@v4
         with:

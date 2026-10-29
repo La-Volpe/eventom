@@ -51,6 +51,9 @@ dependencies {
 }
 
 // Style gate: same baseline-first policy as `shared` (see its comment).
+// WARNING: both modules point at this ONE file, and `:androidApp:ktlintBaseline`
+// writes it unconditionally — this module has zero findings, so running that
+// task ERASES `:shared`'s quarantine. Refresh with `:shared:ktlintBaseline` only.
 ktlint {
     baseline = rootProject.file("config/ktlint/baseline.xml")
 }

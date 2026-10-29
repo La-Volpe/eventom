@@ -4,6 +4,7 @@
 //
 // AGP 9's KMP library plugin owns the Android target below (AGP 9 no longer
 // accepts com.android.library directly inside the multiplatform plugin).
+import kotlinx.kover.gradle.plugin.dsl.CoverageUnit
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
@@ -26,6 +27,20 @@ kover {
                     "com.eventom.data.fake",
                     "com.eventom.platform",
                 )
+            }
+        }
+        verify {
+            // LINE only, bound at the ACHIEVED value — the gate exists to catch
+            // a regression, not to chase a rounded-up aspiration.
+            //
+            // Why no BRANCH rule: 49 of the 52 remaining branch misses are
+            // compiler/serialization-generated outcomes on the @Serializable
+            // DTO headers (EventRemoteDataSource.kt:35, EventDetailRemoteDataSource
+            // .kt:14/25/38 — the latter are BLANK lines). They have no source
+            // statement to execute, so a branch bound would only ever fail.
+            // Measured ceiling: 64.9% branch vs 100% line.
+            rule("shared line coverage") {
+                minBound(100, CoverageUnit.LINE)
             }
         }
     }
@@ -81,6 +96,14 @@ kotlin {
             implementation(libs.kotlin.test)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.koin.test)
+        }
+        // androidHostTest only: the android ACTUALS need a real Context
+        // (Robolectric). They cannot live in commonTest — the iOS targets have
+        // no Context, and Kover does not instrument native targets anyway, so
+        // the JVM host suite is the only place these lines can be measured.
+        // NB: the AGP 9 KMP plugin gives no typed `androidHostTest` accessor.
+        getByName("androidHostTest").dependencies {
+            implementation(libs.robolectric)
         }
     }
 }
